@@ -92,7 +92,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 tram_tim_thay = ket_qua.iloc[0]
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
-                muc_zoom = 12 
+                muc_zoom = 15 
                 st.success(f"✅ Đã định vị thành công trạm CELL ID: {f4} (MNC: {f2})")
             else:
                 st.warning(f"⚠️ Không tìm thấy trạm khớp với: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
