@@ -116,31 +116,29 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         
         folium.LayerControl().add_to(m)
 
-        # HIỂN THỊ THÔNG TIN CHUẨN XÁC NGAY TRÊN ĐỈNH GHIM TỌA ĐỘ
+        # HIỂN THỊ THÔNG TIN TRẠM THEO YÊU CẦU ĐÃ CẬP NHẬT DÒNG CGI
         if tram_tim_thay is not None:
             # Quét thông minh thông tin từ Google Sheet
             cgi_val = lay_thong_tin_cot(tram_tim_thay, ['CGI', 'cgi'])
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
-            # Thiết kế giao diện hộp thông tin trắng, chữ đen, viền đổ bóng bóng bẩy
+            # Bảng thông tin chứa đúng 5 dòng theo yêu cầu của bạn
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; padding: 2px;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
                 <b>CGI:</b> {cgi_val}<br>
-                <b>CELL ID:</b> {f4}<br>
-                <b>LAC/TAC:</b> {f3}<br>
-                <b>MNC:</b> {f2}<br>
-                <b>Tọa độ:</b> {vi_do_xem}, {kinh_do_xem}<br>
+                <b>Latitude:</b> {vi_do_xem}<br>
+                <b>Longitude:</b> {kinh_do_xem}<br>
                 <b>Địa chỉ:</b> {dia_chi_val}<br>
                 <b>Ghi chú:</b> {ghi_chu_val}
             </div>
             """
             
-            # SỬA ĐỔI QUAN TRỌNG: Dùng Tooltip permanent=True để gắn chặt nhãn vào ghim, chống bay lệch
+            # Cắm ghim và đẩy bảng thông tin lên cao (offset=[0, -35]) để lộ rõ ghim đỏ
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
+                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", offset=[0, -35], sticky=False),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
