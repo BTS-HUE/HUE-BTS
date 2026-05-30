@@ -66,7 +66,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             f2 = f2.zfill(2)
 
         # Vị trí mặc định ban đầu khi chưa tìm kiếm (Trung tâm Việt Nam)
-        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230 
+        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230,5 
         tram_tim_thay = None
 
         # ==============================================================================
