@@ -25,24 +25,33 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
     @st.cache_data(ttl=30) # Tự động tải lại dữ liệu mới sau mỗi 30 giây
     def tai_du_lieu():
-        # Đọc dữ liệu dưới dạng văn bản (String)
         data = pd.read_csv(URL, dtype=str)
         
-        # Làm sạch định danh định dạng cột thông số
+        # Tự động xóa khoảng trắng thừa ở tên các cột trong Google Sheet
+        data.columns = data.columns.str.strip()
+        
+        # Làm sạch dữ liệu các cột thông số tìm kiếm
         for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
             if col in data.columns:
                 data[col] = data[col].astype(str).str.strip()
         
-        # Tự động sửa lỗi MNC bị mất số 0 ở đầu (ví dụ Sheet hiện số 1, 2 thì code tự hiểu là 01, 02)
+        # Tự động sửa lỗi MNC bị mất số 0 ở đầu
         if 'MNC' in data.columns:
             data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
                 
         return data
 
+    # Hàm thông minh: Tự động tìm kiếm giá trị của cột bất kể viết hoa, viết thường hay viết có/không dấu
+    def lay_thong_tin_cot(row, danh_sach_ten_goi):
+        for k in row.index:
+            if k.lower().strip() in [x.lower() for x in danh_sach_ten_goi]:
+                return row[k]
+        return "Không có dữ liệu"
+
     try:
         df = tai_du_lieu()
         
-        # Tên các cột theo đúng file Google Sheets của bạn
+        # Tên các cột tìm kiếm bắt buộc (Phải khớp trên Sheet)
         COT_MCC = 'MCC'
         COT_MNC = 'MNC'
         COT_LAC_TAC = 'LAC/TAC'
@@ -60,7 +69,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         f3 = st.sidebar.text_input("3. Nhập số LAC/TAC:").strip()
         f4 = st.sidebar.text_input("4. Nhập số CELL ID:").strip()
 
-        # Nếu bạn gõ số "1" vào ô tìm kiếm MNC, code tự động bù thành "01" để quét đúng dữ liệu
         if f2.isdigit() and len(f2) == 1:
             f2 = f2.zfill(2)
 
@@ -82,7 +90,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             
             if not ket_qua.empty:
                 tram_tim_thay = ket_qua.iloc[0]
-                # Chuyển tọa độ sang dạng số thực float để Folium vẽ bản đồ
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
                 muc_zoom = 17 
@@ -109,11 +116,12 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         
         folium.LayerControl().add_to(m)
 
-        # Nếu tìm thấy trạm, cắm ghim màu đỏ và tự động hiển thị bảng thông tin trạm luôn
+        # HIỂN THỊ THÔNG TIN TRÊN CHẤM TỌA ĐỘ
         if tram_tim_thay is not None:
-            cgi_val = tram_tim_thay.get('CGI', 'Không có dữ liệu')
-            dia_chi_val = tram_tim_thay.get('Địa chỉ', 'Không có dữ liệu')
-            ghi_chu_val = tram_tim_thay.get('Ghi chú', 'Không có dữ liệu')
+            # Sử dụng hàm quét thông minh để lấy dữ liệu kể cả khi viết sai lệch tên cột
+            cgi_val = lay_thong_tin_cot(tram_tim_thay, ['CGI', 'cgi'])
+            dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
+            ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
             noi_dung_popup = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 250px;'>
@@ -128,6 +136,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             </div>
             """
             
+            # Cắm ghim và tự động bật mở bảng thông tin ngay trên chấm tọa độ
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 popup=folium.Popup(noi_dung_popup, max_width=300, show=True),
@@ -138,6 +147,5 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
-        st.info("Mẹo: Hãy đảm bảo các số tọa độ Latitude/Longitude trên Google Sheets đã được dùng dấu chấm (.) phân cách thập phân.")
 else:
     st.info("🔒 Vui lòng nhập đúng mật khẩu ở thanh bên trái để truy cập hệ thống bản đồ.")
