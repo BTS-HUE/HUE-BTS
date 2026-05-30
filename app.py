@@ -8,7 +8,7 @@ from streamlit_folium import st_folium
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide")
 
-# Mật khẩu truy cập trang web (Bạn có thể đổi chữ "admin" thành mật khẩu khác)
+# Mật khẩu truy cập trang web
 MAT_KHAU_CUA_BAN = "admin" 
 
 mat_khau_nhap = st.sidebar.text_input("Nhập mật khẩu truy cập:", type="password")
@@ -25,18 +25,18 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
     @st.cache_data(ttl=30) # Tự động tải lại dữ liệu mới sau mỗi 30 giây
     def tai_du_lieu():
-        # Ép buộc đọc tất cả dữ liệu dưới dạng văn bản (String) để KHÔNG bị mất số 0 ở đầu
+        # Đọc dữ liệu dưới dạng văn bản (String)
         data = pd.read_csv(URL, dtype=str)
         
-        # Làm sạch khoảng trắng thừa và đuôi .0 (nếu có lỗi định dạng)
-        for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID']:
+        # Làm sạch định danh định dạng cột thông số
+        for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
             if col in data.columns:
-                data[col] = data[col].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+                data[col] = data[col].astype(str).str.strip()
         
-        # XỬ LÝ DỮ LIỆU SHEET: Nếu MNC bị mất số 0 (chỉ có số 1, 2...), tự động bù thành 01, 02
+        # Tự động sửa lỗi MNC bị mất số 0 ở đầu (ví dụ Sheet hiện số 1, 2 thì code tự hiểu là 01, 02)
         if 'MNC' in data.columns:
             data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
-            
+                
         return data
 
     try:
@@ -51,31 +51,28 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         COT_KINH_DO = 'Longitude'
         
         # ==============================================================================
-        # 4. DÒNG TÌM KIẾM: BẤM SỐ CHỨ KHÔNG THẢ
+        # 4. DÒNG TÌM KIẾM (BẤM SỐ CHỨ KHÔNG THẢ)
         # ==============================================================================
         st.sidebar.header("Nhập thông số tìm kiếm")
         
-        # Tạo các ô trống để bạn tự tay nhập số từ bàn phím
         f1 = st.sidebar.text_input("1. Nhập số MCC:").strip()
         f2 = st.sidebar.text_input("2. Nhập số MNC:").strip()
         f3 = st.sidebar.text_input("3. Nhập số LAC/TAC:").strip()
         f4 = st.sidebar.text_input("4. Nhập số CELL ID:").strip()
 
-        # XỬ LÝ Ô NHẬP: Nếu bạn lỡ gõ số "1" vào ô MNC, code tự động sửa thành "01" để tìm cho đúng
+        # Nếu bạn gõ số "1" vào ô tìm kiếm MNC, code tự động bù thành "01" để quét đúng dữ liệu
         if f2.isdigit() and len(f2) == 1:
             f2 = f2.zfill(2)
 
         # Vị trí mặc định ban đầu khi chưa tìm kiếm (Trung tâm Việt Nam)
-        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230,5 
+        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
         tram_tim_thay = None
 
         # ==============================================================================
         # 5. XỬ LÝ LỌC VÀ TÌM KIẾM DỮ LIỆU
         # ==============================================================================
-        # Chỉ kích hoạt tìm kiếm khi bạn đã gõ chữ/số vào cả 4 ô trống
         if f1 and f2 and f3 and f4:
             
-            # Tìm kiếm chính xác tuyệt đối theo các thông số đã gõ
             ket_qua = df[
                 (df[COT_MCC] == f1) & 
                 (df[COT_MNC] == f2) & 
@@ -85,9 +82,10 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             
             if not ket_qua.empty:
                 tram_tim_thay = ket_qua.iloc[0]
+                # Chuyển tọa độ sang dạng số thực float để Folium vẽ bản đồ
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
-                muc_zoom = 17 # Tự động zoom sát vạch vào vị trí trạm
+                muc_zoom = 17 
                 st.success(f"✅ Đã định vị thành công trạm CELL ID: {f4} (MNC: {f2})")
             else:
                 st.warning(f"⚠️ Không tìm thấy trạm khớp với: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
@@ -99,13 +97,11 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         # ==============================================================================
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
-        # Thêm lớp bản đồ vệ tinh Google
         folium.TileLayer(
             tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
             attr='Google Satellite', name='Bản đồ Vệ tinh', overlay=False, control=True
         ).add_to(m)
         
-        # Thêm lớp bản đồ đường phố Google
         folium.TileLayer(
             tiles='https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
             attr='Google Maps Street', name='Bản đồ Đường phố', overlay=False, control=True
@@ -113,7 +109,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         
         folium.LayerControl().add_to(m)
 
-        # Nếu tìm thấy trạm, ghim màu đỏ và hiện popup thông tin chi tiết
+        # Nếu tìm thấy trạm, cắm ghim màu đỏ và tự động hiển thị bảng thông tin trạm luôn
         if tram_tim_thay is not None:
             cgi_val = tram_tim_thay.get('CGI', 'Không có dữ liệu')
             dia_chi_val = tram_tim_thay.get('Địa chỉ', 'Không có dữ liệu')
@@ -131,16 +127,17 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 <b>Ghi chú:</b> {ghi_chu_val}
             </div>
             """
+            
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                popup=folium.Popup(noi_dung_popup, max_width=300),
+                popup=folium.Popup(noi_dung_popup, max_width=300, show=True),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # Hiển thị bản đồ ra trang web
         st_folium(m, width="100%", height=650, returned_objects=[])
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
+        st.info("Mẹo: Hãy đảm bảo các số tọa độ Latitude/Longitude trên Google Sheets đã được dùng dấu chấm (.) phân cách thập phân.")
 else:
     st.info("🔒 Vui lòng nhập đúng mật khẩu ở thanh bên trái để truy cập hệ thống bản đồ.")
