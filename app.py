@@ -116,16 +116,17 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         
         folium.LayerControl().add_to(m)
 
-        # HIỂN THỊ THÔNG TIN TRÊN CHẤM TỌA ĐỘ
+        # HIỂN THỊ THÔNG TIN CHUẨN XÁC NGAY TRÊN ĐỈNH GHIM TỌA ĐỘ
         if tram_tim_thay is not None:
-            # Sử dụng hàm quét thông minh để lấy dữ liệu kể cả khi viết sai lệch tên cột
+            # Quét thông minh thông tin từ Google Sheet
             cgi_val = lay_thong_tin_cot(tram_tim_thay, ['CGI', 'cgi'])
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
-            noi_dung_popup = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 250px;'>
-                <h4 style='margin: 0 0 5px 0; color: #d9534f;'>Thông Tin Trạm</h4>
+            # Thiết kế giao diện hộp thông tin trắng, chữ đen, viền đổ bóng bóng bẩy
+            noi_dung_label = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; padding: 2px;'>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>CELL ID:</b> {f4}<br>
                 <b>LAC/TAC:</b> {f3}<br>
@@ -136,10 +137,10 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             </div>
             """
             
-            # Cắm ghim và tự động bật mở bảng thông tin ngay trên chấm tọa độ
+            # SỬA ĐỔI QUAN TRỌNG: Dùng Tooltip permanent=True để gắn chặt nhãn vào ghim, chống bay lệch
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                popup=folium.Popup(noi_dung_popup, max_width=300, show=True),
+                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
