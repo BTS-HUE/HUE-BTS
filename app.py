@@ -14,6 +14,7 @@ if "logged_in" not in st.session_state:
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
+# CSS chung cho hệ thống (Không chứa CSS nền của màn hình khóa)
 st.markdown(
     """
     <style>
@@ -65,20 +66,32 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
+    # [ĐÃ SỬA] CSS hình nền và màng mờ CHỈ HOẠT ĐỘNG tại đây khi CHƯA ĐĂNG NHẬP
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
     st.markdown(
         f"""
         <style>
         .stApp {{
-            background-image: url("{url_hinh_nen}");
-            background-attachment: fixed;
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
+            background-image: url("{url_hinh_nen}") !important;
+            background-attachment: fixed !important;
+            background-size: cover !important;
+            background-position: center center !important;
+            background-repeat: no-repeat !important;
         }}
         label {{
             color: white !important;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+        }}
+        /* Tạo khung mờ cô lập, không phủ lên toàn màn hình */
+        .login-box-container {{
+            background-color: rgba(0, 0, 0, 0.6) !important; 
+            padding: 30px !important; 
+            border-radius: 15px !important; 
+            color: white !important; 
+            text-align: center !important;
+            margin-top: 12% !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5) !important;
+            backdrop-filter: blur(5px) !important;
         }}
         </style>
         """,
@@ -87,15 +100,7 @@ if not st.session_state.logged_in:
     
     st.markdown(
         """
-        <div style='
-            background-color: rgba(0, 0, 0, 0.6); 
-            padding: 30px; 
-            border-radius: 15px; 
-            color: white; 
-            text-align: center;
-            margin-top: 12%;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);'>
+        <div class="login-box-container">
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
             <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để bắt đầu làm việc.</p>
         </div>
@@ -107,6 +112,23 @@ if not st.session_state.logged_in:
 # 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
 # ==============================================================================
 else:
+    # [ĐÃ SỬA] Khi đăng nhập thành công, chủ động dọn dẹp sạch sẽ thuộc tính CSS cũ của màn hình khóa
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-image: none !important;
+            background-color: transparent !important;
+        }
+        label {
+            color: inherit !important;
+            text-shadow: none !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
     with col_main_title:
         st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
@@ -228,9 +250,9 @@ else:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # [ĐÃ SỬA LỖI TẠI ĐÂY] Bỏ use_container_width và đặt width=None để tự động co giãn full cột
         with col_right_map:
             folium_static(m, height=760, width=None)
 
     except Exception as e:
-        st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối: {e}")
+        with col_right_map:
+            st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối: {e}")
