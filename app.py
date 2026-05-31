@@ -18,13 +18,25 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
-    # CSS ẩn thanh Header ở giao diện chính
+    # CSS ẩn thanh Header và định dạng lại Tooltip cố định không bị lệch
     st.markdown(
         """
         <style>
         header {visibility: hidden !important;}
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
+        
+        /* Định dạng hộp Tooltip hiển thị sẵn không bị vỡ hay lệch vị trí */
+        .leaflet-tooltip-top::before {
+            border-top-color: #d9534f !important;
+        }
+        .leaflet-tooltip {
+            background-color: white !important;
+            border: 1px solid #cccccc !important;
+            border-radius: 8px !important;
+            box-shadow: 0px 2px 10px rgba(0,0,0,0.2) !important;
+            padding: 8px !important;
+        }
         </style>
         """,
         unsafe_allow_html=True
@@ -118,9 +130,9 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
-            # Bảng thông tin tối ưu hiển thị dạng Popup chuẩn
+            # Nội dung thông tin trạm
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 230px; color: #333333; line-height: 1.5;'>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Latitude:</b> {vi_do_xem}<br>
@@ -130,14 +142,15 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             </div>
             """
             
-            # Thay đổi từ Tooltip sang Popup để cố định vị trí chuẩn xác vào ghim đỏ, tối đa chiều rộng bảng là 260px
+            # Sử dụng Tooltip nhưng bật thuộc tính hiển thị vĩnh viễn (permanent=True)
+            # Không dùng offset thủ công mà để direction="top" để Folium tự căn giữa đỉnh ghim tránh lệch.
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                popup=folium.Popup(noi_dung_label, max_width=260),
+                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # 🛠️ ĐÃ TĂNG CHIỀU CAO BẢN ĐỒ (height) TỪ 650 LÊN 800 ĐỂ BẢN ĐỒ TO HƠN
+        # Bản đồ kích thước lớn (height=800) giúp quan sát trực quan
         st_folium(m, width="100%", height=800, returned_objects=[])
 
     except Exception as e:
@@ -152,7 +165,6 @@ else:
     st.markdown(
         f"""
         <style>
-        /* 1. ẨN HOÀN TOÀN THANH HEADER CHỨA NÚT FORK / MENU ĐIỀU HƯỚNG */
         header {{
             visibility: hidden !important;
             height: 0px !important;
@@ -160,8 +172,6 @@ else:
         [data-testid="stHeader"] {{
             background: transparent !important;
         }}
-        
-        /* 2. Phủ kín hình nền toàn màn hình */
         .stApp {{
             background-image: url("{url_hinh_nen}");
             background-attachment: fixed;
@@ -169,13 +179,10 @@ else:
             background-position: center center;
             background-repeat: no-repeat;
         }}
-        
-        /* 3. Làm mờ sidebar một chút ở màn hình khóa để tiệp với hình nền */
         [data-testid="stSidebar"] {{
             background-color: rgba(255, 255, 255, 0.15) !important;
             backdrop-filter: blur(5px);
         }}
-        /* Đổi màu chữ chữ ở sidebar màn hình khóa sang trắng để dễ đọc */
         [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {{
             color: white !important;
         }}
@@ -184,7 +191,6 @@ else:
         unsafe_allow_html=True
     )
     
-    # Hộp thông báo đẹp mắt giữa màn hình khóa
     st.markdown(
         """
         <div style='
