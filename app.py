@@ -65,7 +65,7 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
-    url_hinh_nen = "https://i.postimg.cc/Y0P7jnm7/WC-to.png"
+    url_hinh_nen = "WC to.png"
     st.markdown(
         f"""
         <style>
