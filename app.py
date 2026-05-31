@@ -12,12 +12,16 @@ st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide")
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
-# Tạo khu vực đăng nhập nằm ngang ở trên cùng bằng st.columns
-st.markdown("<h3 style='text-align: center; color: white; margin-bottom: 20px;' class='login-header'>🔐 ĐĂNG NHẬP HỆ THỐNG</h3>", unsafe_allow_html=True)
-col_user, col_pass = st.columns(2)
+# Thiết lập tỷ lệ cột: Khoảng trống lớn bên trái (70%), 2 cột nhỏ bên phải (15% - 15%)
+col_space, col_user, col_pass = st.columns([7, 1.5, 1.5])
+
+with col_space:
+    # Khoảng trống đẩy 2 ô đăng nhập về góc phải
+    st.write("")
 
 with col_user:
     tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
+
 with col_pass:
     mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
 
@@ -27,18 +31,13 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
-    # CSS ẩn thanh Header, ẩn dòng chữ tiêu đề đăng nhập và ép khung bản đồ giãn rộng
+    # CSS ẩn thanh Header, ép khung bản đồ giãn rộng tối đa màn hình
     st.markdown(
         """
         <style>
         header {visibility: hidden !important;}
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
-        
-        /* Ẩn dòng chữ Đăng nhập hệ thống khi đã vào trong */
-        .login-header {  
-            display: none !important;
-        }
         
         /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa */
         .block-container {
@@ -172,7 +171,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # Hiển thị bản đồ kích thước lớn
+        # Hiển thị bản đồ kích thước lớn rộng rãi
         folium_static(m, width=1600, height=800)
 
     except Exception as e:
@@ -180,7 +179,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
 
 else:
     # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ ĐỊNH DẠNG Ô ĐĂNG NHẬP NẰM NGANG)
+    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ Ô ĐĂNG NHẬP Ở GÓC PHẢI)
     # ==============================================================================
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     
@@ -199,36 +198,42 @@ else:
             background-repeat: no-repeat;
         }}
         
-        /* 2. Ẩn thanh sidebar đi khi chưa đăng nhập thành công */
+        /* 2. Ẩn thanh sidebar đi khi chưa đăng nhập */
         [data-testid="stSidebar"] {{
             display: none !important;
         }}
         
-        /* 3. Định dạng nhãn chữ (label) của ô đăng nhập sang màu trắng cho dễ nhìn trên nền tối */
+        /* 3. Định dạng nhãn chữ (label) màu trắng, bóng đổ đen để nổi bật trên nền ảnh */
         label {{
             color: white !important;
             font-weight: bold !important;
-            text-shadow: 1px 1px 2px black;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+        }}
+        
+        /* Giảm bớt khoảng cách phía trên của cột chứa input */
+        [data-testid="stColumn"] {{
+            padding-top: 5px !important;
+         cursor: default;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
     
-    # Hộp thông báo hệ thống đang khóa
+    # Hộp thông báo hệ thống đang khóa nằm ở trung tâm màn hình dưới ô đăng nhập
     st.markdown(
         """
         <div style='
             background-color: rgba(0, 0, 0, 0.6); 
-            padding: 25px; 
+            padding: 30px; 
             border-radius: 15px; 
             color: white; 
             text-align: center;
-            margin-top: 10%;
+            margin-top: 12%;
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);'>
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản và Mật khẩu ở phía trên để mở khóa bản đồ vệ tinh trạm phát sóng.</p>
+            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để vào bản đồ vệ tinh.</p>
         </div>
         """, 
         unsafe_allow_html=True
