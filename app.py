@@ -17,6 +17,19 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     # ==============================================================================
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
+    
+    # CSS ẩn thanh Header ở giao diện chính (tùy chọn: giúp ẩn nút fork/menu cả khi đã đăng nhập)
+    st.markdown(
+        """
+        <style>
+        header {visibility: hidden !important;}
+        footer {visibility: hidden !important;}
+        #MainMenu {visibility: hidden !important;}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("🛰️ HỆ THỐNG TRA CỨU VỊ TRÍ TRẠM PHÁT SÓNG")
 
     # KẾT NỐI VỚI GOOGLE SHEETS
@@ -129,15 +142,23 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
 else:
     # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (CHỈ XUẤT HIỆN HÌNH NỀN FULL TẠI ĐÂY)
+    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ ẨN HEADER/FORK)
     # ==============================================================================
-    # ⚠️ Thay đổi link ảnh nền full màn hình ở đây
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     
     st.markdown(
         f"""
         <style>
-        /* Phủ kín hình nền toàn màn hình */
+        /* 1. ẨN HOÀN TOÀN THANH HEADER CHỨA NÚT FORK / MENU ĐIỀU HƯỚNG */
+        header {{
+            visibility: hidden !important;
+            height: 0px !important;
+        }}
+        [data-testid="stHeader"] {{
+            background: transparent !important;
+        }}
+        
+        /* 2. Phủ kín hình nền toàn màn hình */
         .stApp {{
             background-image: url("{url_hinh_nen}");
             background-attachment: fixed;
@@ -145,7 +166,8 @@ else:
             background-position: center center;
             background-repeat: no-repeat;
         }}
-        /* Làm mờ sidebar một chút ở màn hình khóa để tiệp với hình nền */
+        
+        /* 3. Làm mờ sidebar một chút ở màn hình khóa để tiệp với hình nền */
         [data-testid="stSidebar"] {{
             background-color: rgba(255, 255, 255, 0.15) !important;
             backdrop-filter: blur(5px);
