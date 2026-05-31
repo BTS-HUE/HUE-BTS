@@ -65,7 +65,7 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
-    url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
+    url_hinh_nen = "https://ibb.co/YBpgYLNC"
     st.markdown(
         f"""
         <style>
