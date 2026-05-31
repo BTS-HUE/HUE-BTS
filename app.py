@@ -14,7 +14,7 @@ if "logged_in" not in st.session_state:
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
-# CSS chung cho hệ thống (Không chứa CSS nền của màn hình khóa)
+# CSS chung cho hệ thống
 st.markdown(
     """
     <style>
@@ -51,22 +51,10 @@ st.markdown(
 )
 
 # ==============================================================================
-# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP
+# 2. MÀN HÌNH ĐĂNG NHẬP (SỬ DỤNG FORM ĐỂ CHỐNG ĐÓNG BĂNG CHUỘT)
 # ==============================================================================
 if not st.session_state.logged_in:
-    col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
-
-    with col_login_1:
-        tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
-
-    with col_login_2:
-        mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
-        
-    if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
-        st.session_state.logged_in = True
-        st.rerun()
-
-    # [ĐÃ SỬA] CSS hình nền và màng mờ CHỈ HOẠT ĐỘNG tại đây khi CHƯA ĐĂNG NHẬP
+    # Set hình nền cho màn hình khóa
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
     st.markdown(
         f"""
@@ -78,41 +66,45 @@ if not st.session_state.logged_in:
             background-position: center center !important;
             background-repeat: no-repeat !important;
         }}
-        label {{
-            color: white !important;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
-        }}
-        /* Tạo khung mờ cô lập, không phủ lên toàn màn hình */
-        .login-box-container {{
-            background-color: rgba(0, 0, 0, 0.6) !important; 
-            padding: 30px !important; 
-            border-radius: 15px !important; 
-            color: white !important; 
-            text-align: center !important;
-            margin-top: 12% !important;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5) !important;
-            backdrop-filter: blur(5px) !important;
+        /* Tùy chỉnh màu chữ form đăng nhập hiển thị rõ trên nền ảnh */
+        .stForm label {{
+            color: #ffffff !important;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
+
+    # Đưa Form Đăng nhập ra chính giữa màn hình
+    _, col_center_login, _ = st.columns([3.5, 3.0, 3.5])
     
-    st.markdown(
-        """
-        <div class="login-box-container">
-            <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để bắt đầu làm việc.</p>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+    with col_center_login:
+        st.write("<br><br><br>", unsafe_allow_html=True) # Đẩy khung xuống vị trí vừa mắt
+        
+        # Sử dụng st.form để gom cụm xử lý dữ liệu, click mượt mà không bị lỗi tương tác chuột
+        with st.form(key="login_form"):
+            st.markdown("<h2 style='text-align: center; color: white; margin-top:0;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align: center; color: #dddddd; font-size:14px;'>Vui lòng xác thực tài khoản để vào bản đồ trạm phát sóng</p>", unsafe_allow_html=True)
+            
+            tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="")
+            mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password")
+            
+            nut_dang_nhap = st.form_submit_button("🔑 Đăng Nhập Hệ Thống", use_container_width=True)
+            
+            if nut_dang_nhap:
+                if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("❌ Sai tài khoản hoặc mật khẩu!")
+                    
+    st.stop() # Chặn không cho chạy phần giao diện bản đồ phía dưới khi chưa đăng nhập thành công
 
 # ==============================================================================
-# 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
+# 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG - ẨN HOÀN TOÀN FORM TRÊN)
 # ==============================================================================
 else:
-    # [ĐÃ SỬA] Khi đăng nhập thành công, chủ động dọn dẹp sạch sẽ thuộc tính CSS cũ của màn hình khóa
+    # Xóa bỏ background ảnh khi đã vào giao diện bản đồ chính
     st.markdown(
         """
         <style>
@@ -120,15 +112,13 @@ else:
             background-image: none !important;
             background-color: transparent !important;
         }
-        label {
-            color: inherit !important;
-            text-shadow: none !important;
-        }
+        label { color: inherit !important; text-shadow: none !important; }
         </style>
         """,
         unsafe_allow_html=True
     )
 
+    # Thanh tiêu đề chính và nút đăng xuất
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
     with col_main_title:
         st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
@@ -140,7 +130,7 @@ else:
 
     st.markdown("---")
 
-    # Chia layout: Cột trái (Tìm kiếm hàng dọc) | Cột phải (Bản đồ)
+    # Bố cục yêu cầu: Cột trái (4 hàng tìm kiếm xếp dọc) | Cột phải (Bản đồ)
     col_left_search, col_right_map = st.columns([2.0, 8.0])
 
     with col_left_search:
@@ -213,7 +203,7 @@ else:
                 with col_left_search:
                     st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
 
-        # KHỞI TẠO BẢN ĐỒ
+        # KHỞI TẠO BẢN ĐỒ FOLIAM
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
         folium.TileLayer(
@@ -250,9 +240,10 @@ else:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
+        # Đưa bản đồ vào cột bên phải với tính năng tự động co giãn full khung hình
         with col_right_map:
             folium_static(m, height=760, width=None)
 
     except Exception as e:
         with col_right_map:
-            st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối: {e}")
+            st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối mạng: {e}")
