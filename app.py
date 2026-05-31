@@ -65,7 +65,7 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
-    url_hinh_nen = "https://drive.google.com/file/d/10hg8zaRCKYJX3W5coxSeIzeyvXURSMAi/view?usp=sharing"
+    url_hinh_nen = "https://postimg.cc/Fk08BxZC"
     st.markdown(
         f"""
         <style>
