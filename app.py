@@ -65,7 +65,7 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
-    url_hinh_nen = "WC to.png"
+    url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
     st.markdown(
         f"""
         <style>
