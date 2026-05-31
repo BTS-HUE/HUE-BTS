@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import folium
-# Sửa dòng import này để lấy thêm hàm folium_static
+# Đảm bảo import đầy đủ cả st_folium và folium_static
 from streamlit_folium import st_folium, folium_static
 
 # ==============================================================================
@@ -19,6 +19,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
+    # CSS ẩn thanh Header và ép khung chứa folium_static giãn rộng tối đa màn hình
     st.markdown(
         """
         <style>
@@ -26,6 +27,22 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         
+        /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa, bỏ khoảng trống 2 bên */
+        .block-container {
+            padding-top: 1rem !important;
+            padding-bottom: 0rem !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+            max-width: 100% !important;
+        }
+        
+        /* Ép khung chứa bản đồ folium_static căn giữa và mở rộng */
+        .stFoliumStatic {
+            margin: 0 auto !important;
+            width: 100% !important;
+        }
+        
+        /* Định dạng hộp Tooltip hiển thị sẵn không bị vỡ hay lệch vị trí */
         .leaflet-tooltip-top::before {
             border-top-color: #d9534f !important;
         }
@@ -141,8 +158,8 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # 🛠️ THAY ĐỔI QUAN TRỌNG: Dùng folium_static để render chuẩn giao diện mà không bị kẹt góc trái
-        folium_static(m, width=1200, height=750)
+        # 🛠️ ĐÃ TĂNG RỘNG width LÊN 1600 VÀ CHIỀU CAO height LÊN 800 ĐỂ BẢN ĐỒ TO TOÀN DIỆN
+        folium_static(m, width=1600, height=800)
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
