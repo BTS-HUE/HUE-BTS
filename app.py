@@ -4,11 +4,15 @@ import folium
 from streamlit_folium import folium_static
 
 # ==============================================================================
-# 1. CẤU HÌNH GIAO DIỆN BAN ĐẦU
+# 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
-# Cấu hình tài khoản và mật khẩu cố định
+# [CẢI TIẾN 1] Khởi tạo trạng thái đăng nhập bằng session_state để tránh mất phiên khi nhấn Enter
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# Cấu hình tài khoản cố định
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
@@ -37,75 +41,113 @@ st.markdown(
         font-weight: bold !important;
     }
     
-    /* Giảm bớt khoảng cách lề (margin) của các ô nhập liệu cho khít và gọn hơn */
-    div[data-testid="stTextInput"] {
-        margin-bottom: -10px !important;
+    /* CSS định dạng riêng cho Tooltip và bản đồ */
+    .leaflet-tooltip-top::before { border-top-color: #d9534f !important; }
+    .leaflet-tooltip {
+        background-color: white !important;
+        border: 2px solid #d9534f !important;
+        border-radius: 8px !important;
+        box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
+        padding: 10px !important;
     }
+    .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# Khởi tạo các biến lưu thông số tìm kiếm trước để tránh lỗi crash logic
-f1, f2, f3, f4 = "", "", "", ""
-
-# Chia khung trên cùng thành: Khoảng trống lớn bên trái (75%), và 2 cột nhỏ bên phải (12.5% mỗi cột)
-col_space, col_right_1, col_right_2 = st.columns([7.5, 1.25, 1.25])
-
-with col_space:
-    # Vùng trống bên trái dùng để hiển thị tiêu đề lớn sau này
-    pass
-
-with col_right_1:
-    tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
-
-with col_right_2:
-    mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
-
-
+# ==============================================================================
 # 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP
-if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
-    # ==============================================================================
-    # GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
-    # ==============================================================================
+# ==============================================================================
+# [CẢI TIẾN 2] Nếu chưa đăng nhập: Hiện màn hình khóa và form nhập ở góc trên bên phải.
+# Khi đăng nhập thành công, mục này sẽ ẨN HOÀN TOÀN.
+if not st.session_state.logged_in:
     
-    # Tiếp tục chèn 4 ô tìm kiếm xếp dọc (chia làm 2 cặp cột) ngay dưới ô đăng nhập tương ứng
-    with col_right_1:
-        f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
-        f3 = st.text_input("3. Số LAC/TAC:", key="lac_in").strip()
+    # Chia khung trên cùng thành: Khoảng trống lớn bên trái (70%), và 2 cột nhỏ bên phải (15% mỗi cột)
+    col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
+
+    with col_login_1:
+        tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
+
+    with col_login_2:
+        mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
         
-    with col_right_2:
-        f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
-        f4 = st.text_input("4. Số CELL ID:", key="cell_in").strip()
+    # Kiểm tra thông tin đăng nhập trực tiếp khi người dùng gõ
+    if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
+        st.session_state.logged_in = True
+        st.rerun()
 
-    # Viết tiêu đề hệ thống sang bên vùng trống góc trái
-    with col_space:
-        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
-        if f1 and f2 and f3 and f4:
-            st.write("") # Giữ khoảng trống đẹp
-        else:
-            st.info("💡 Điền đầy đủ thông số MCC, MNC, LAC, CELL ID ở góc phải rồi nhấn Enter để tra cứu.")
-
-    # CSS định dạng riêng cho Tooltip và bản đồ vệ tinh
+    # GIAO DIỆN MÀN HÌNH KHÓA (CHƯA ĐĂNG NHẬP)
+    url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     st.markdown(
-        """
+        f"""
         <style>
-        .leaflet-tooltip-top::before { border-top-color: #d9534f !important; }
-        .leaflet-tooltip {
-            background-color: white !important;
-            border: 2px solid #d9534f !important;
-            border-radius: 8px !important;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
-            padding: 10px !important;
-        }
-        .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
+        .stApp {{
+            background-image: url("{url_hinh_nen}");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }}
+        label {{
+            color: white !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+        }}
         </style>
         """,
         unsafe_allow_html=True
     )
+    
+    st.markdown(
+        """
+        <div style='
+            background-color: rgba(0, 0, 0, 0.6); 
+            padding: 30px; 
+            border-radius: 15px; 
+            color: white; 
+            text-align: center;
+            margin-top: 12%;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);'>
+            <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
+            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để bắt đầu làm việc.</p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
-    if f2.isdigit() and len(f2) == 1:
-        f2 = f2.zfill(2)
+# ==============================================================================
+# 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
+# ==============================================================================
+else:
+    # Thanh tiêu đề trên cùng và nút đăng xuất nhanh
+    col_main_title, col_logout_btn = st.columns([8.5, 1.5])
+    with col_main_title:
+        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
+    with col_logout_btn:
+        st.write("") # Tạo khoảng trống căn lề nút
+        if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
+            st.session_state.logged_in = False
+            st.rerun()
+
+    st.markdown("---")
+
+    # [CẢI TIẾN 3] Chia layout thành: Cột bên trái chứa 4 hàng tìm kiếm dọc (2.0) và Cột bên phải chứa bản đồ (8.0)
+    col_left_search, col_right_map = st.columns([2.0, 8.0])
+
+    with col_left_search:
+        st.markdown("### 🔍 Thông Số Tra Cứu")
+        f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
+        f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
+        f3 = st.text_input("3. Số LAC/TAC:", key="lac_in").strip()
+        f4 = st.text_input("4. Số CELL ID:", key="cell_in").strip()
+
+        if f2.isdigit() and len(f2) == 1:
+            f2 = f2.zfill(2)
+
+        st.write("")
+        if not (f1 and f2 and f3 and f4):
+            st.info("💡 Nhập đầy đủ 4 thông số bên trên rồi nhấn **Enter** để tra cứu trạm trên bản đồ.")
 
     # Kết nối dữ liệu Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
@@ -113,14 +155,17 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
 
     @st.cache_data(ttl=30) 
     def tai_du_lieu():
-        data = pd.read_csv(URL, dtype=str)
-        data.columns = data.columns.str.strip()
-        for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
-            if col in data.columns:
-                data[col] = data[col].astype(str).str.strip()
-        if 'MNC' in data.columns:
-            data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
-        return data
+        try:
+            data = pd.read_csv(URL, dtype=str)
+            data.columns = data.columns.str.strip()
+            for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
+                if col in data.columns:
+                    data[col] = data[col].astype(str).str.strip()
+            if 'MNC' in data.columns:
+                data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
+            return data
+        except Exception as e:
+            return pd.DataFrame()
 
     def lay_thong_tin_cot(row, danh_sach_ten_goi):
         for k in row.index:
@@ -141,7 +186,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
         tram_tim_thay = None
 
-        if f1 and f2 and f3 and f4:
+        if f1 and f2 and f3 and f4 and not df.empty:
             ket_qua = df[
                 (df[COT_MCC] == f1) & 
                 (df[COT_MNC] == f2) & 
@@ -154,9 +199,11 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
                 muc_zoom = 16 
-                st.success(f"✅ Định vị thành công trạm CELL ID: {f4}")
+                with col_left_search:
+                    st.success(f"✅ Tìm thấy CELL ID: {f4}")
             else:
-                st.warning(f"⚠️ Không tìm thấy trạm: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
+                with col_left_search:
+                    st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
 
         # KHỞI TẠO BẢN ĐỒ
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
@@ -195,52 +242,9 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # Hiển thị bản đồ lớn, rộng hết màn hình
-        folium_static(m, width=1650, height=780)
+        # [CẢI TIẾN 4] Đưa bản đồ vào cột bên phải và sử dụng use_container_width để tự co giãn thông minh
+        with col_right_map:
+            folium_static(m, height=760, use_container_width=True)
 
     except Exception as e:
-        st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
-
-else:
-    # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (KHI CHƯA ĐĂNG NHẬP)
-    # ==============================================================================
-    url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
-    
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url("{url_hinh_nen}");
-            background-attachment: fixed;
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-        }}
-        label {{
-            color: white !important;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Hộp thông báo hệ thống đang khóa đặt ở giữa màn hình
-    st.markdown(
-        """
-        <div style='
-            background-color: rgba(0, 0, 0, 0.6); 
-            padding: 30px; 
-            border-radius: 15px; 
-            color: white; 
-            text-align: center;
-            margin-top: 12%;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);'>
-            <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để bắt đầu làm việc.</p>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+        st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối: {e}")
