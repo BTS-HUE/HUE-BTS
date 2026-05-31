@@ -1,22 +1,54 @@
 import streamlit as st
 import pandas as pd
 import folium
-from streamlit_folium import st_folium, folium_static
+from streamlit_folium import folium_static
 
 # ==============================================================================
-# 1. CẤU HÌNH GIAO DIỆN BAN ĐẦU
+# 1. CẤU HÌNH GIAO DIỆN BAN ĐẦU (ẨN HOÀN TOÀN SIDEBAR TỪ ĐẦU)
 # ==============================================================================
-st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide")
+st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
 # Cấu hình tài khoản và mật khẩu cố định
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
-# Thiết lập tỷ lệ cột: Khoảng trống lớn bên trái (70%), 2 cột nhỏ bên phải (15% - 15%)
+# Ép toàn bộ ứng dụng ẩn Sidebar bằng CSS để tránh lỗi giao diện
+st.markdown(
+    """
+    <style>
+    /* Ẩn hoàn toàn nút mở Sidebar và thanh Sidebar trái */
+    [data-testid="stSidebarNav"] {display: none !important;}
+    [data-testid="stSidebar"] {display: none !important;}
+    section[data-testid="stSidebar"] {width: 0px !important; display: none !important;}
+    
+    /* Ẩn thanh header chứa nút Fork/Deploy */
+    header {visibility: hidden !important; height: 0px !important;}
+    footer {visibility: hidden !important;}
+    #MainMenu {visibility: hidden !important;}
+    
+    /* Ép khung giao diện chính giãn rộng 100% sát viền màn hình */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 0rem !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        max-width: 100% !important;
+    }
+    
+    /* Định dạng nhãn chữ (label) của các ô nhập liệu chung */
+    label {
+        font-weight: bold !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# 2. KHU VỰC Ô ĐĂNG NHẬP Ở GÓC TRÊN BÊN PHẢI MÀN HÌNH
 col_space, col_user, col_pass = st.columns([7, 1.5, 1.5])
 
 with col_space:
-    st.write("")
+    st.write("") # Khoảng trống lớn đẩy 2 ô về góc phải
 
 with col_user:
     tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
@@ -24,44 +56,18 @@ with col_user:
 with col_pass:
     mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
 
-# Kiểm tra thông tin đăng nhập
+
+# 3. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP ĐỂ HIỂN THỊ GIAO DIỆN CHÍNH HOẶC MÀN HÌNH KHÓA
 if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
     # ==============================================================================
-    # GIAO DIỆN CHÍNH (HIỆN SIDEBAR TÌM KIẾM - MẤT HÌNH NỀN)
+    # GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
     # ==============================================================================
     
-    # CSS ẩn thanh Header, ép khung bản đồ giãn rộng tối đa màn hình
+    # CSS riêng cho giao diện chính (Định dạng lại Tooltip bản đồ)
     st.markdown(
         """
         <style>
-        header {visibility: hidden !important;}
-        footer {visibility: hidden !important;}
-        #MainMenu {visibility: hidden !important;}
-        
-        /* HIỆN LẠI SIDEBAR TRONG GIAO DIỆN CHÍNH */
-        [data-testid="stSidebar"] {
-            display: block !important;
-        }
-        
-        /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa */
-        .block-container {
-            padding-top: 1rem !important;
-            padding-bottom: 0rem !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
-            max-width: 100% !important;
-        }
-        
-        /* Ép khung chứa bản đồ folium_static căn giữa và mở rộng */
-        .stFoliumStatic {
-            margin: 0 auto !important;
-            width: 100% !important;
-        }
-        
-        /* Định dạng hộp Tooltip hiển thị sẵn */
-        .leaflet-tooltip-top::before {
-            border-top-color: #d9534f !important;
-        }
+        .leaflet-tooltip-top::before { border-top-color: #d9534f !important; }
         .leaflet-tooltip {
             background-color: white !important;
             border: 2px solid #d9534f !important;
@@ -69,13 +75,32 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
             box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
             padding: 10px !important;
         }
+        .stFoliumStatic { margin: 0 auto !important; width: 100% !important; }
         </style>
         """,
         unsafe_allow_html=True
     )
 
     st.title("🛰️ HỆ THỐNG TRA CỨU VỊ TRÍ TRẠM PHÁT SÓNG")
+    st.markdown("---")
 
+    # 🛠️ ĐƯA 4 Ô TÌM KIẾM RA NẰM NGANG NGAY DƯỚI TIÊU ĐỀ/MỤC ĐĂNG NHẬP
+    st.markdown("##### 🔍 Nhập thông số tìm kiếm trạm:")
+    f1_col, f2_col, f3_col, f4_col = st.columns(4)
+    
+    with f1_col:
+        f1 = st.text_input("1. Nhập số MCC:", key="mcc_in").strip()
+    with f2_col:
+        f2 = st.text_input("2. Nhập số MNC:", key="mnc_in").strip()
+    with f3_col:
+        f3 = st.text_input("3. Nhập số LAC/TAC:", key="lac_in").strip()
+    with f4_col:
+        f4 = st.text_input("4. Nhập số CELL ID:", key="cell_in").strip()
+
+    if f2.isdigit() and len(f2) == 1:
+        f2 = f2.zfill(2)
+
+    # Đọc dữ liệu từ Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
@@ -105,16 +130,6 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         COT_CELL_ID = 'CELL ID'
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
-        
-        # ĐÂY LÀ KHU VỰC CÁC MỤC TÌM KIẾM CỦA BẠN (SẼ XUẤT HIỆN Ở SIDEBAR TRÁI)
-        st.sidebar.header("Nhập thông số tìm kiếm")
-        f1 = st.sidebar.text_input("1. Nhập số MCC:").strip()
-        f2 = st.sidebar.text_input("2. Nhập số MNC:").strip()
-        f3 = st.sidebar.text_input("3. Nhập số LAC/TAC:").strip()
-        f4 = st.sidebar.text_input("4. Nhập số CELL ID:").strip()
-
-        if f2.isdigit() and len(f2) == 1:
-            f2 = f2.zfill(2)
 
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
         tram_tim_thay = None
@@ -136,7 +151,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
             else:
                 st.warning(f"⚠️ Không tìm thấy trạm khớp với: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
         else:
-            st.sidebar.info("💡 Hãy gõ đầy đủ số vào cả 4 ô trên rồi nhấn Enter để xem bản đồ.")
+            st.info("💡 Điền đầy đủ thông số vào cả 4 ô ở trên rồi nhấn Enter để định vị trên bản đồ.")
 
         # KHỞI TẠO BẢN ĐỒ
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
@@ -176,24 +191,21 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
             ).add_to(m)
 
         # Hiển thị bản đồ kích thước lớn rộng rãi
-        folium_static(m, width=1600, height=800)
+        folium_static(m, width=1600, height=750)
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
 
 else:
     # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (ẨN SIDEBAR TÌM KIẾM - HIỆN HÌNH NỀN)
+    # GIAO DIỆN MÀN HÌNH KHÓA (KHI CHƯA ĐĂNG NHẬP)
     # ==============================================================================
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     
     st.markdown(
         f"""
         <style>
-        header {{ visibility: hidden !important; height: 0px !important; }}
-        [data-testid="stHeader"] {{ background: transparent !important; }}
-        
-        /* 1. Phủ kín hình nền toàn màn hình */
+        /* Phủ kín hình nền toàn màn hình */
         .stApp {{
             background-image: url("{url_hinh_nen}");
             background-attachment: fixed;
@@ -202,27 +214,19 @@ else:
             background-repeat: no-repeat;
         }}
         
-        /* 2. ẨN TẠM THỜI THANH SIDEBAR KHI CHƯA ĐĂNG NHẬP */
-        [data-testid="stSidebar"] {{
-            display: none !important;
-        }}
-        
-        /* 3. Định dạng nhãn chữ (label) màu trắng */
+        /* Định dạng nhãn chữ đăng nhập màu trắng để nổi bật trên ảnh nền */
         label {{
             color: white !important;
-            font-weight: bold !important;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
         }}
         
-        [data-testid="stColumn"] {{
-            padding-top: 5px !important;
-        }}
+        [data-testid="stColumn"] {{ padding-top: 5px !important; }}
         </style>
         """,
         unsafe_allow_html=True
     )
     
-    # Hộp thông báo hệ thống đang khóa
+    # Hộp thông báo hệ thống đang khóa đặt ở giữa màn hình
     st.markdown(
         """
         <div style='
@@ -235,7 +239,7 @@ else:
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);'>
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để mở khóa thanh tìm kiếm và bản đồ.</p>
+            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để hiển thị bảng tìm kiếm và bản đồ.</p>
         </div>
         """, 
         unsafe_allow_html=True
