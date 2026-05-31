@@ -18,7 +18,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
-    # CSS ẩn thanh Header ở giao diện chính (tùy chọn: giúp ẩn nút fork/menu cả khi đã đăng nhập)
+    # CSS ẩn thanh Header ở giao diện chính
     st.markdown(
         """
         <style>
@@ -118,8 +118,9 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
+            # Bảng thông tin tối ưu hiển thị dạng Popup chuẩn
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; padding: 2px;'>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 230px; color: #333333; line-height: 1.5;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Latitude:</b> {vi_do_xem}<br>
@@ -129,13 +130,15 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             </div>
             """
             
+            # Thay đổi từ Tooltip sang Popup để cố định vị trí chuẩn xác vào ghim đỏ, tối đa chiều rộng bảng là 260px
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", offset=[0, -35], sticky=False),
+                popup=folium.Popup(noi_dung_label, max_width=260),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        st_folium(m, width="100%", height=650, returned_objects=[])
+        # 🛠️ ĐÃ TĂNG CHIỀU CAO BẢN ĐỒ (height) TỪ 650 LÊN 800 ĐỂ BẢN ĐỒ TO HƠN
+        st_folium(m, width="100%", height=800, returned_objects=[])
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
