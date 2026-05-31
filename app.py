@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import folium
-# Đảm bảo import đầy đủ cả st_folium và folium_static
 from streamlit_folium import st_folium, folium_static
 
 # ==============================================================================
@@ -9,17 +8,26 @@ from streamlit_folium import st_folium, folium_static
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide")
 
-# Mật khẩu truy cập trang web
-MAT_KHAU_CUA_BAN = "admin" 
+# Cấu hình tài khoản và mật khẩu cố định
+TAI_KHOAN_CHUAN = "admin"
+MAT_KHAU_CHUAN = "admin"
 
-mat_khau_nhap = st.sidebar.text_input("Nhập mật khẩu truy cập:", type="password")
+# Tạo khu vực đăng nhập nằm ngang ở trên cùng bằng st.columns
+st.markdown("<h3 style='text-align: center; color: white; margin-bottom: 20px;' class='login-header'>🔐 ĐĂNG NHẬP HỆ THỐNG</h3>", unsafe_allow_html=True)
+col_user, col_pass = st.columns(2)
 
-if mat_khau_nhap == MAT_KHAU_CUA_BAN:
+with col_user:
+    tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
+with col_pass:
+    mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
+
+# Kiểm tra thông tin đăng nhập
+if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
     # ==============================================================================
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
-    # CSS ẩn thanh Header và ép khung chứa folium_static giãn rộng tối đa màn hình
+    # CSS ẩn thanh Header, ẩn dòng chữ tiêu đề đăng nhập và ép khung bản đồ giãn rộng
     st.markdown(
         """
         <style>
@@ -27,7 +35,12 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         
-        /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa, bỏ khoảng trống 2 bên */
+        /* Ẩn dòng chữ Đăng nhập hệ thống khi đã vào trong */
+        .login-header {  
+            display: none !important;
+        }
+        
+        /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa */
         .block-container {
             padding-top: 1rem !important;
             padding-bottom: 0rem !important;
@@ -42,7 +55,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             width: 100% !important;
         }
         
-        /* Định dạng hộp Tooltip hiển thị sẵn không bị vỡ hay lệch vị trí */
+        /* Định dạng hộp Tooltip hiển thị sẵn */
         .leaflet-tooltip-top::before {
             border-top-color: #d9534f !important;
         }
@@ -90,6 +103,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
         
+        # THANH TÌM KIẾM SIDEBAR TRẢ VỀ ĐỂ TRA CỨU SAU KHI ĐĂNG NHẬP
         st.sidebar.header("Nhập thông số tìm kiếm")
         f1 = st.sidebar.text_input("1. Nhập số MCC:").strip()
         f2 = st.sidebar.text_input("2. Nhập số MNC:").strip()
@@ -158,7 +172,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # 🛠️ ĐÃ TĂNG RỘNG width LÊN 1600 VÀ CHIỀU CAO height LÊN 800 ĐỂ BẢN ĐỒ TO TOÀN DIỆN
+        # Hiển thị bản đồ kích thước lớn
         folium_static(m, width=1600, height=800)
 
     except Exception as e:
@@ -166,7 +180,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
 else:
     # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ ẨN HEADER/FORK)
+    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ ĐỊNH DẠNG Ô ĐĂNG NHẬP NẰM NGANG)
     # ==============================================================================
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     
@@ -175,6 +189,8 @@ else:
         <style>
         header {{ visibility: hidden !important; height: 0px !important; }}
         [data-testid="stHeader"] {{ background: transparent !important; }}
+        
+        /* 1. Phủ kín hình nền toàn màn hình */
         .stApp {{
             background-image: url("{url_hinh_nen}");
             background-attachment: fixed;
@@ -182,21 +198,37 @@ else:
             background-position: center center;
             background-repeat: no-repeat;
         }}
+        
+        /* 2. Ẩn thanh sidebar đi khi chưa đăng nhập thành công */
         [data-testid="stSidebar"] {{
-            background-color: rgba(255, 255, 255, 0.15) !important;
-            backdrop-filter: blur(5px);
+            display: none !important;
         }}
-        [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {{ color: white !important; }}
+        
+        /* 3. Định dạng nhãn chữ (label) của ô đăng nhập sang màu trắng cho dễ nhìn trên nền tối */
+        label {{
+            color: white !important;
+            font-weight: bold !important;
+            text-shadow: 1px 1px 2px black;
+        }}
         </style>
         """,
         unsafe_allow_html=True
     )
     
+    # Hộp thông báo hệ thống đang khóa
     st.markdown(
         """
-        <div style='background-color: rgba(0, 0, 0, 0.6); padding: 30px; border-radius: 15px; color: white; text-align: center; margin-top: 15%; box-shadow: 0px 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);'>
+        <div style='
+            background-color: rgba(0, 0, 0, 0.6); 
+            padding: 25px; 
+            border-radius: 15px; 
+            color: white; 
+            text-align: center;
+            margin-top: 10%;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);'>
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9;'>Vui lòng nhập chính xác mật khẩu ở thanh bên trái để mở khóa bản đồ vệ tinh.</p>
+            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản và Mật khẩu ở phía trên để mở khóa bản đồ vệ tinh trạm phát sóng.</p>
         </div>
         """, 
         unsafe_allow_html=True
