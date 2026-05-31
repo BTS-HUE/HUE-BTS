@@ -53,9 +53,8 @@ f1, f2, f3, f4 = "", "", "", ""
 col_space, col_right_1, col_right_2 = st.columns([7.5, 1.25, 1.25])
 
 with col_space:
-    # Nếu đã đăng nhập, tiêu đề lớn của hệ thống sẽ nằm ở vùng trống bên trái này
-    if st. Leviathan_placeholder := "username_input" in st.session_state:
-        pass # Sẽ viết tiêu đề ở dưới sau khi xác thực
+    # Vùng trống bên trái dùng để hiển thị tiêu đề lớn sau này
+    pass
 
 with col_right_1:
     tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
