@@ -8,15 +8,12 @@ from streamlit_folium import folium_static
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
-# [CẢI TIẾN 1] Khởi tạo trạng thái đăng nhập bằng session_state để tránh mất phiên khi nhấn Enter
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# Cấu hình tài khoản cố định
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "admin"
 
-# Ép toàn bộ ứng dụng ẩn Sidebar bằng CSS và định dạng layout chung
 st.markdown(
     """
     <style>
@@ -28,7 +25,6 @@ st.markdown(
     footer {visibility: hidden !important;}
     #MainMenu {visibility: hidden !important;}
     
-    /* Ép khung giao diện chính giãn rộng tối đa */
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 0rem !important;
@@ -37,11 +33,8 @@ st.markdown(
         max-width: 100% !important;
     }
     
-    label {
-        font-weight: bold !important;
-    }
+    label { font-weight: bold !important; }
     
-    /* CSS định dạng riêng cho Tooltip và bản đồ */
     .leaflet-tooltip-top::before { border-top-color: #d9534f !important; }
     .leaflet-tooltip {
         background-color: white !important;
@@ -59,11 +52,7 @@ st.markdown(
 # ==============================================================================
 # 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP
 # ==============================================================================
-# [CẢI TIẾN 2] Nếu chưa đăng nhập: Hiện màn hình khóa và form nhập ở góc trên bên phải.
-# Khi đăng nhập thành công, mục này sẽ ẨN HOÀN TOÀN.
 if not st.session_state.logged_in:
-    
-    # Chia khung trên cùng thành: Khoảng trống lớn bên trái (70%), và 2 cột nhỏ bên phải (15% mỗi cột)
     col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
 
     with col_login_1:
@@ -72,12 +61,10 @@ if not st.session_state.logged_in:
     with col_login_2:
         mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
         
-    # Kiểm tra thông tin đăng nhập trực tiếp khi người dùng gõ
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
         st.rerun()
 
-    # GIAO DIỆN MÀN HÌNH KHÓA (CHƯA ĐĂNG NHẬP)
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     st.markdown(
         f"""
@@ -120,19 +107,18 @@ if not st.session_state.logged_in:
 # 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
 # ==============================================================================
 else:
-    # Thanh tiêu đề trên cùng và nút đăng xuất nhanh
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
     with col_main_title:
         st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
     with col_logout_btn:
-        st.write("") # Tạo khoảng trống căn lề nút
+        st.write("") 
         if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
             st.session_state.logged_in = False
             st.rerun()
 
     st.markdown("---")
 
-    # [CẢI TIẾN 3] Chia layout thành: Cột bên trái chứa 4 hàng tìm kiếm dọc (2.0) và Cột bên phải chứa bản đồ (8.0)
+    # Chia layout: Cột trái (Tìm kiếm hàng dọc) | Cột phải (Bản đồ)
     col_left_search, col_right_map = st.columns([2.0, 8.0])
 
     with col_left_search:
@@ -242,9 +228,9 @@ else:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # [CẢI TIẾN 4] Đưa bản đồ vào cột bên phải và sử dụng use_container_width để tự co giãn thông minh
+        # [ĐÃ SỬA LỖI TẠI ĐÂY] Bỏ use_container_width và đặt width=None để tự động co giãn full cột
         with col_right_map:
-            folium_static(m, height=760, use_container_width=True)
+            folium_static(m, height=760, width=None)
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu hoặc kết nối: {e}")
