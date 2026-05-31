@@ -32,10 +32,10 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         }
         .leaflet-tooltip {
             background-color: white !important;
-            border: 1px solid #cccccc !important;
+            border: 2px solid #d9534f !important;
             border-radius: 8px !important;
-            box-shadow: 0px 2px 10px rgba(0,0,0,0.2) !important;
-            padding: 8px !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
+            padding: 10px !important;
         }
         </style>
         """,
@@ -48,7 +48,7 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
-    @st.cache_data(ttl=30) # Tự động tải lại dữ liệu mới sau mỗi 30 giây
+    @st.cache_data(ttl=30) 
     def tai_du_lieu():
         data = pd.read_csv(URL, dtype=str)
         data.columns = data.columns.str.strip()
@@ -88,6 +88,9 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         if f2.isdigit() and len(f2) == 1:
             f2 = f2.zfill(2)
 
+        # Tạo một mã key động mặc định cho bản đồ ban đầu
+        map_key = "ban_do_mac_dinh"
+
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
         tram_tim_thay = None
 
@@ -104,13 +107,17 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
                 muc_zoom = 16 
+                
+                # 🛠️ THAY ĐỔI KEY DỰA TRÊN TỌA ĐỘ ĐỂ ÉP STREAMLIT VẼ LẠI BẢN ĐỒ CHUẨN XÁC
+                map_key = f"map_{vi_do_xem}_{kinh_do_xem}"
+                
                 st.success(f"✅ Đã định vị thành công trạm CELL ID: {f4} (MNC: {f2})")
             else:
                 st.warning(f"⚠️ Không tìm thấy trạm khớp với: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
         else:
             st.sidebar.info("💡 Hãy gõ đầy đủ số vào cả 4 ô trên rồi nhấn Enter để xem bản đồ.")
 
-        # BẢN ĐỒ
+        # KHỞI TẠO BẢN ĐỒ
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
         folium.TileLayer(
@@ -130,7 +137,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
-            # Nội dung thông tin trạm
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
@@ -142,16 +148,14 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
             </div>
             """
             
-            # Sử dụng Tooltip nhưng bật thuộc tính hiển thị vĩnh viễn (permanent=True)
-            # Không dùng offset thủ công mà để direction="top" để Folium tự căn giữa đỉnh ghim tránh lệch.
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # Bản đồ kích thước lớn (height=800) giúp quan sát trực quan
-        st_folium(m, width="100%", height=800, returned_objects=[])
+        # 🛠️ TRUYỀN THAM SỐ key=map_key VÀO ĐỂ BẢN ĐỒ TỰ ĐỘNG LÀM TƯƠI VÀ ĐỊNH VỊ CHUẨN XÁC
+        st_folium(m, width="100%", height=800, key=map_key, returned_objects=[])
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
