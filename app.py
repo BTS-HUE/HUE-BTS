@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import folium
-from streamlit_folium import st_folium
+# Sửa dòng import này để lấy thêm hàm folium_static
+from streamlit_folium import st_folium, folium_static
 
 # ==============================================================================
 # 1. CẤU HÌNH GIAO DIỆN BAN ĐẦU
@@ -18,7 +19,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
     # ==============================================================================
     
-    # CSS ẩn thanh Header và định dạng lại Tooltip cố định không bị lệch
     st.markdown(
         """
         <style>
@@ -26,7 +26,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
         
-        /* Định dạng hộp Tooltip hiển thị sẵn không bị vỡ hay lệch vị trí */
         .leaflet-tooltip-top::before {
             border-top-color: #d9534f !important;
         }
@@ -44,7 +43,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
     st.title("🛰️ HỆ THỐNG TRA CỨU VỊ TRÍ TRẠM PHÁT SÓNG")
 
-    # KẾT NỐI VỚI GOOGLE SHEETS
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
@@ -52,14 +50,11 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     def tai_du_lieu():
         data = pd.read_csv(URL, dtype=str)
         data.columns = data.columns.str.strip()
-        
         for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
             if col in data.columns:
                 data[col] = data[col].astype(str).str.strip()
-        
         if 'MNC' in data.columns:
             data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
-                
         return data
 
     def lay_thong_tin_cot(row, danh_sach_ten_goi):
@@ -78,7 +73,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
         
-        # THANH TÌM KIẾM SIDEBAR
         st.sidebar.header("Nhập thông số tìm kiếm")
         f1 = st.sidebar.text_input("1. Nhập số MCC:").strip()
         f2 = st.sidebar.text_input("2. Nhập số MNC:").strip()
@@ -87,9 +81,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
 
         if f2.isdigit() and len(f2) == 1:
             f2 = f2.zfill(2)
-
-        # Tạo một mã key động mặc định cho bản đồ ban đầu
-        map_key = "ban_do_mac_dinh"
 
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
         tram_tim_thay = None
@@ -107,10 +98,6 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 vi_do_xem = float(tram_tim_thay[COT_VI_DO])
                 kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
                 muc_zoom = 16 
-                
-                # 🛠️ THAY ĐỔI KEY DỰA TRÊN TỌA ĐỘ ĐỂ ÉP STREAMLIT VẼ LẠI BẢN ĐỒ CHUẨN XÁC
-                map_key = f"map_{vi_do_xem}_{kinh_do_xem}"
-                
                 st.success(f"✅ Đã định vị thành công trạm CELL ID: {f4} (MNC: {f2})")
             else:
                 st.warning(f"⚠️ Không tìm thấy trạm khớp với: MCC={f1}, MNC={f2}, LAC/TAC={f3}, CELL ID={f4}")
@@ -154,8 +141,8 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # 🛠️ TRUYỀN THAM SỐ key=map_key VÀO ĐỂ BẢN ĐỒ TỰ ĐỘNG LÀM TƯƠI VÀ ĐỊNH VỊ CHUẨN XÁC
-        st_folium(m, width="100%", height=800, key=map_key, returned_objects=[])
+        # 🛠️ THAY ĐỔI QUAN TRỌNG: Dùng folium_static để render chuẩn giao diện mà không bị kẹt góc trái
+        folium_static(m, width=1200, height=750)
 
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
@@ -169,13 +156,8 @@ else:
     st.markdown(
         f"""
         <style>
-        header {{
-            visibility: hidden !important;
-            height: 0px !important;
-        }}
-        [data-testid="stHeader"] {{
-            background: transparent !important;
-        }}
+        header {{ visibility: hidden !important; height: 0px !important; }}
+        [data-testid="stHeader"] {{ background: transparent !important; }}
         .stApp {{
             background-image: url("{url_hinh_nen}");
             background-attachment: fixed;
@@ -187,9 +169,7 @@ else:
             background-color: rgba(255, 255, 255, 0.15) !important;
             backdrop-filter: blur(5px);
         }}
-        [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {{
-            color: white !important;
-        }}
+        [data-testid="stSidebar"] p, [data-testid="stSidebar"] label {{ color: white !important; }}
         </style>
         """,
         unsafe_allow_html=True
@@ -197,15 +177,7 @@ else:
     
     st.markdown(
         """
-        <div style='
-            background-color: rgba(0, 0, 0, 0.6); 
-            padding: 30px; 
-            border-radius: 15px; 
-            color: white; 
-            text-align: center;
-            margin-top: 15%;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);'>
+        <div style='background-color: rgba(0, 0, 0, 0.6); padding: 30px; border-radius: 15px; color: white; text-align: center; margin-top: 15%; box-shadow: 0px 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);'>
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
             <p style='font-size: 16px; opacity: 0.9;'>Vui lòng nhập chính xác mật khẩu ở thanh bên trái để mở khóa bản đồ vệ tinh.</p>
         </div>
