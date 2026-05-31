@@ -4,9 +4,45 @@ import folium
 from streamlit_folium import st_folium
 
 # ==============================================================================
-# 1. CẤU HÌNH GIAO DIỆN & MẬT KHẨU
+# 1. CẤU HÌNH GIAO DIỆN & HÌNH NỀN (BACKGROUND)
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide")
+
+def thiet_lap_hinh_nen():
+    # ⚠️ HÃY THAY LINK ẢNH DƯỚI ĐÂY THÀNH LINK HÌNH NỀN BẠN MUỐN DÙNG
+    url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
+    
+    st.markdown(
+        f"""
+        <style>
+        /* Cấu hình hình nền cho toàn bộ ứng dụng */
+        .stApp {{
+            background-image: url("{url_hinh_nen}");
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+        }}
+        
+        /* Làm hộp nhập liệu ở thanh bên (Sidebar) dễ nhìn hơn trên nền ảnh */
+        [data-testid="stSidebar"] {{
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }}
+        
+        /* Định dạng lại tiêu đề chính để nổi bật trên nền tối/sáng */
+        h1 {{
+            color: #ffffff !important;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Gọi hàm thiết lập hình nền
+thiet_lap_hinh_nen()
 
 # Mật khẩu truy cập trang web
 MAT_KHAU_CUA_BAN = "admin" 
@@ -147,4 +183,13 @@ if mat_khau_nhap == MAT_KHAU_CUA_BAN:
     except Exception as e:
         st.error(f"❌ Lỗi cấu trúc dữ liệu: {e}")
 else:
-    st.info("🔒 Vui lòng nhập đúng mật khẩu ở thanh bên trái để truy cập hệ thống bản đồ.")
+    # Hộp thông báo khi chưa nhập đúng mật khẩu (làm mờ nền đen để dễ nhìn chữ)
+    st.markdown(
+        """
+        <div style='background-color: rgba(0,0,0,0.6); padding: 20px; border-radius: 10px; color: white;'>
+            <h3>🔒 Hệ thống đang khóa</h3>
+            <p>Vui lòng nhập đúng mật khẩu ở thanh bên trái để truy cập hệ thống bản đồ.</p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
