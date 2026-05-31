@@ -16,7 +16,6 @@ MAT_KHAU_CHUAN = "admin"
 col_space, col_user, col_pass = st.columns([7, 1.5, 1.5])
 
 with col_space:
-    # Khoảng trống đẩy 2 ô đăng nhập về góc phải
     st.write("")
 
 with col_user:
@@ -28,7 +27,7 @@ with col_pass:
 # Kiểm tra thông tin đăng nhập
 if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
     # ==============================================================================
-    # GIAO DIỆN CHÍNH (MẤT HÌNH NỀN KHI VÀO ĐÂY)
+    # GIAO DIỆN CHÍNH (HIỆN SIDEBAR TÌM KIẾM - MẤT HÌNH NỀN)
     # ==============================================================================
     
     # CSS ẩn thanh Header, ép khung bản đồ giãn rộng tối đa màn hình
@@ -38,6 +37,11 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         header {visibility: hidden !important;}
         footer {visibility: hidden !important;}
         #MainMenu {visibility: hidden !important;}
+        
+        /* HIỆN LẠI SIDEBAR TRONG GIAO DIỆN CHÍNH */
+        [data-testid="stSidebar"] {
+            display: block !important;
+        }
         
         /* Mẹo ép vùng hiển thị chính của Streamlit rộng tối đa */
         .block-container {
@@ -102,7 +106,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
         
-        # THANH TÌM KIẾM SIDEBAR TRẢ VỀ ĐỂ TRA CỨU SAU KHI ĐĂNG NHẬP
+        # ĐÂY LÀ KHU VỰC CÁC MỤC TÌM KIẾM CỦA BẠN (SẼ XUẤT HIỆN Ở SIDEBAR TRÁI)
         st.sidebar.header("Nhập thông số tìm kiếm")
         f1 = st.sidebar.text_input("1. Nhập số MCC:").strip()
         f2 = st.sidebar.text_input("2. Nhập số MNC:").strip()
@@ -179,7 +183,7 @@ if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
 
 else:
     # ==============================================================================
-    # GIAO DIỆN MÀN HÌNH KHÓA (HÌNH NỀN FULL VÀ Ô ĐĂNG NHẬP Ở GÓC PHẢI)
+    # GIAO DIỆN MÀN HÌNH KHÓA (ẨN SIDEBAR TÌM KIẾM - HIỆN HÌNH NỀN)
     # ==============================================================================
     url_hinh_nen = "https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://img4.thuthuatphanmem.vn/uploads/2020/08/28/anh-bien-chu-welcome_094124627.jpg"
     
@@ -198,29 +202,27 @@ else:
             background-repeat: no-repeat;
         }}
         
-        /* 2. Ẩn thanh sidebar đi khi chưa đăng nhập */
+        /* 2. ẨN TẠM THỜI THANH SIDEBAR KHI CHƯA ĐĂNG NHẬP */
         [data-testid="stSidebar"] {{
             display: none !important;
         }}
         
-        /* 3. Định dạng nhãn chữ (label) màu trắng, bóng đổ đen để nổi bật trên nền ảnh */
+        /* 3. Định dạng nhãn chữ (label) màu trắng */
         label {{
             color: white !important;
             font-weight: bold !important;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
         }}
         
-        /* Giảm bớt khoảng cách phía trên của cột chứa input */
         [data-testid="stColumn"] {{
             padding-top: 5px !important;
-         cursor: default;
         }}
         </style>
         """,
         unsafe_allow_html=True
     )
     
-    # Hộp thông báo hệ thống đang khóa nằm ở trung tâm màn hình dưới ô đăng nhập
+    # Hộp thông báo hệ thống đang khóa
     st.markdown(
         """
         <div style='
@@ -233,7 +235,7 @@ else:
             box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);'>
             <h2 style='color: #ffffff; margin-bottom: 10px;'>🔒 HỆ THỐNG ĐANG KHÓA</h2>
-            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để vào bản đồ vệ tinh.</p>
+            <p style='font-size: 16px; opacity: 0.9; margin: 0;'>Vui lòng nhập chính xác Tài khoản & Mật khẩu tại góc trên bên phải để mở khóa thanh tìm kiếm và bản đồ.</p>
         </div>
         """, 
         unsafe_allow_html=True
