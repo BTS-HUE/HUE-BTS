@@ -81,7 +81,7 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
-        # 🔑 LƯU VÀO COOKIE: Token bảo mật lưu trên trình duyệt người dùng (Hết hạn sau 1 ngày)
+        # 🔑 LƯU VÀO COOKIE: Token bảo mật lưu trên trình duyệt người dùng (Hết hạn sau 60 phút = 3600 giây)
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
@@ -276,8 +276,9 @@ else:
             note_l = lay_thong_tin_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
             cell_l = tram_luu[COT_CELL_ID]
 
+            # 🛠️ ĐÃ SỬA: Thêm word-wrap và white-space để chống tràn hàng địa chỉ dài
             noi_dung_luu = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
                 <b>CELL ID:</b> {cell_l}<br>
                 <b>CGI:</b> {cgi_l}<br>
@@ -300,8 +301,9 @@ else:
             ghi_chu_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
 
+            # 🛠️ ĐÃ SỬA: Thêm word-wrap và white-space để chống tràn hàng địa chỉ dài
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
                 <b>CELL ID:</b> {cell_val}<br>
                 <b>CGI:</b> {cgi_val}<br>
