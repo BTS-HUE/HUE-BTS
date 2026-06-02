@@ -12,7 +12,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 TAI_KHOAN_CHUAN = "admin"
-MAT_KHAU_CHUAN = "admin"
+MAT_KHAU_CHUAN = "tuan"
 
 st.markdown(
     """
