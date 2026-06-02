@@ -13,17 +13,11 @@ cookies = CookieController()
 # 0. HÀM TOÁN HỌC TÍNH KHOẢNG CÁCH HAVERSINE (ĐƯỜNG CHIM BAY KHÉP KÍN)
 # ==============================================================================
 def tinh_haversine(lat1, lon1, lat2, lon2):
-    # Chuyển đổi tọa độ từ độ sang Radian
     r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
-    
-    # Tính độ chênh lệch
     dlat = r_lat2 - r_lat1
     dlon = r_lon2 - r_lon1
-    
-    # Áp dụng công thức hình cầu Haversine
     a = math.sin(dlat / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin(dlon / 2)**2
     c = 2 * math.asin(math.sqrt(a))
-    
     BAN_KINH_TRAI_DAT_KM = 6371.0
     return c * BAN_KINH_TRAI_DAT_KM
 
@@ -86,7 +80,7 @@ st.markdown(
 )
 
 # ==============================================================================
-# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP
+# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP (Lưu lại ô tài khoản cố định)
 # ==============================================================================
 if not st.session_state.logged_in:
     col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
@@ -99,7 +93,6 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
-        # 🔑 Giờ giới hạn bảo mật phiên làm việc: 60 phút (3600 giây)
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
@@ -159,10 +152,8 @@ else:
 
     st.markdown("---")
 
-    # Chia layout cột: Trái nhập liệu & quản lý, Phải hiển thị bản đồ toàn cảnh
     col_left_search, col_right_map = st.columns([2.3, 7.7])
 
-    # Kết nối trực tiếp cơ sở dữ liệu Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
@@ -193,12 +184,11 @@ else:
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
 
-        # Tọa độ mặc định ban đầu bao quát khu vực miền Trung Việt Nam
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
-        # 🔍 KHU VỰC FORM TRA CỨU CỐ ĐỊNH (CỘT TRÁI)
         with col_left_search:
-            with st.form("form_tra_cuu"):
+            # ✨ CẢI TIẾN THÊM: form_clear_on_submit=True giúp tự làm sạch ô nhập dữ liệu ngay khi bấm Tìm kiếm
+            with st.form("form_tra_cuu", clear_on_submit=True):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
                 f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
                 f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
@@ -228,7 +218,6 @@ else:
                 else:
                     st.error("❌ Vui lòng nhập đủ 4 thông số!")
 
-            # Nút Lưu điểm trạm vừa tìm kiếm vào danh sách bộ nhớ tạm thời
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 if st.button(f"📌 Lưu điểm CELL ID: {cell_id_hien_tai}", type="primary", use_container_width=True):
@@ -239,7 +228,6 @@ else:
                     else:
                         st.toast("Trạm này đã được lưu trước đó!")
             
-            # 🔄 🛠️ TÍNH TOÁN KHOẢNG CÁCH TUYẾN / CHU VI VÒNG KHÉP KÍN ĐỘNG (BẤT KỂ SỐ ĐIỂM)
             so_luong_diem = len(st.session_state.danh_sach_luu)
             if so_luong_diem >= 2:
                 st.markdown("---")
@@ -248,7 +236,6 @@ else:
                 tong_khoang_cach = 0.0
                 ds_chi_tiet = []
                 
-                # Bước 1: Duyệt tính tuần tự các cạnh nối liên tiếp giữa các điểm ghim (1->2, 2->3, 3->4...)
                 for i in range(so_luong_diem - 1):
                     p1 = st.session_state.danh_sach_luu[i]
                     p2 = st.session_state.danh_sach_luu[i+1]
@@ -256,7 +243,6 @@ else:
                     tong_khoang_cach += kc
                     ds_chi_tiet.append(f"• Đoạn {i+1} → {i+2}: **{kc:.2f} km**")
                 
-                # Bước 2: THUẬT TOÁN KHOANH TRÒN: Nếu có từ 3 điểm trở lên, tự động tính cạnh khép nối từ điểm Cuối ngược về điểm Đầu
                 if so_luong_diem >= 3:
                     p_cuoi = st.session_state.danh_sach_luu[-1]
                     p_dau = st.session_state.danh_sach_luu[0]
@@ -264,7 +250,6 @@ else:
                     tong_khoang_cach += kc_khay_vong
                     ds_chi_tiet.append(f"• Đoạn {so_luong_diem} → 1 (Khép góc): **{kc_khay_vong:.2f} km**")
                 
-                # Hiển thị thống kê thông minh lên cột trái cho kỹ thuật viên theo dõi
                 if so_luong_diem == 2:
                     st.info(f"📍 Khoảng cách đường nối:\n**{tong_khoang_cach:.2f} km**")
                 else:
@@ -273,7 +258,6 @@ else:
                         for dong in ds_chi_tiet:
                             st.write(dong)
 
-            # 📌 QUẢN LÝ DANH SÁCH & BẤM XÓA TỪNG ĐIỂM ĐÃ GHIM TRÊN LAYOUT
             if so_luong_diem > 0:
                 st.markdown("---")
                 st.markdown(f"### 📍 Điểm Đã Lưu ({so_luong_diem})")
@@ -298,7 +282,6 @@ else:
                     st.session_state.tram_hien_tai = None
                     st.rerun()
 
-        # Đổi tọa độ trung tâm bản đồ tự động hướng về điểm vừa thao tác gần nhất
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -308,7 +291,6 @@ else:
             kinh_do_xem = float(st.session_state.danh_sach_luu[-1][COT_KINH_DO])
             muc_zoom = 14
 
-        # KHỞI TẠO BẢN ĐỒ LỚP PHỦ FOLIUM
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
         folium.TileLayer(
@@ -323,21 +305,19 @@ else:
         
         folium.LayerControl().add_to(m)
 
-        # Mảng thu thập danh sách tọa độ thực thi hình học hình khối
         toa_do_vung = []
 
         # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (GHIM MÀU XANH DƯƠNG)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l = float(tram_luu[COT_VI_DO])
             lon_l = float(tram_luu[COT_KINH_DO])
-            toa_do_vung.append([lat_l, lon_l]) # Gom tọa độ
+            toa_do_vung.append([lat_l, lon_l])
             
             cgi_l = lay_thong_tin_cot(tram_luu, ['CGI', 'cgi'])
             addr_l = lay_thong_tin_cot(tram_luu, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
             note_l = lay_thong_tin_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
             cell_l = tram_luu[COT_CELL_ID]
 
-            # 🛡️ CHỐNG TRÀN CHỮ: Thuộc tính word-wrap: break-word và white-space: normal bẻ gãy từ siêu dài ôm khít khung
             noi_dung_luu = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
@@ -357,20 +337,18 @@ else:
 
         # 🔄 🛠️ DỰNG ĐỒ HỌA KHOANH TRÒN VÙNG TRÊN BẢN ĐỒ DỰA VÀO SỐ LƯỢNG ĐIỂM
         if len(toa_do_vung) == 2:
-            # Nếu chỉ có 2 điểm ghim: Vẽ một đoạn thẳng nối 2 vị trí thông thường
             folium.PolyLine(
                 locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
             ).add_to(m)
         elif len(toa_do_vung) >= 3:
-            # Nếu có từ 3, 4, 5 đến vô vàn điểm: Biến đổi thành đa giác khép kín tô khối mờ diện tích (Polygon)
             folium.Polygon(
                 locations=toa_do_vung,
-                color="#0275d8",       # Màu viền nét đứt bao quanh vùng
-                weight=3,              # Độ dày viền bao
-                fill=True,             # Bật lớp phủ
-                fill_color="#0275d8",  # Màu nền trong đa giác
-                fill_opacity=0.15,     # Độ mờ 15% giúp nhìn xuyên xuống lớp nền vệ tinh bên dưới
-                dash_array='5, 5'      # Nét vẽ đứt quãng chuyên nghiệp
+                color="#0275d8",       
+                weight=3,              
+                fill=True,             
+                fill_color="#0275d8",  
+                fill_opacity=0.15,     
+                dash_array='5, 5'      
             ).add_to(m)
 
         # 🔴 VẼ ĐIỂM TRẠM ĐANG TÌM KIẾM MỚI NHẤT (GHIM MÀU ĐỎ)
@@ -380,7 +358,6 @@ else:
             ghi_chu_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
 
-            # 🛡️ CHỐNG TRÀN CHỮ: Áp dụng tương tự cho nhãn tìm kiếm trạm màu đỏ
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
@@ -398,7 +375,6 @@ else:
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
-        # Đẩy dữ liệu bản đồ hoàn thiện lên giao diện cột phải rộng rãi
         with col_right_map:
             folium_static(m, height=760, width=None)
 
