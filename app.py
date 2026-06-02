@@ -131,8 +131,8 @@ else:
 
     st.markdown("---")
 
-    # Chia layout cố định: Cột trái (Form nhập liệu) | Cột phải (Khu vực hiển thị bản đồ)
-    col_left_search, col_right_map = st.columns([2.2, 7.8])
+    # Chia layout cố định: Cột trái (Form nhập liệu & DS lưu) | Cột phải (Bản đồ)
+    col_left_search, col_right_map = st.columns([2.3, 7.7])
 
     # Kết nối dữ liệu Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
@@ -167,9 +167,8 @@ else:
 
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
-        # 🛠️ THIẾT KẾ KHU VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
+        # 🛠️ KHU VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
         with col_left_search:
-            # Sử dụng st.form để chặn đứng việc tự reload khi đang gõ chữ
             with st.form("form_tra_cuu"):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
                 f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
@@ -180,10 +179,8 @@ else:
                 if f2.isdigit() and len(f2) == 1:
                     f2 = f2.zfill(2)
                 
-                # NÚT 1: Tìm kiếm trạm phát sóng
                 nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
             
-            # Xử lý khi người dùng click nút "Tìm kiếm trạm"
             if nut_tim_kiem:
                 if f1 and f2 and f3 and f4:
                     ket_qua = df[
@@ -198,34 +195,53 @@ else:
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
                     else:
                         st.session_state.tram_hien_tai = None
-                        st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
+                        st.warning("⚠️ Không tìm thấy trạm!")
                 else:
                     st.error("❌ Vui lòng nhập đủ 4 thông số!")
 
-            # NÚT 2: Lưu điểm tọa độ đang xem (Đặt ngoài form để không bị bắt buộc bấm nút tìm kiếm)
-            st.write("---")
+            # Xử lý Lưu điểm
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
-                
                 if st.button(f"📌 Lưu điểm CELL ID: {cell_id_hien_tai}", type="primary", use_container_width=True):
-                    # Kiểm tra xem điểm này đã được lưu trước đó chưa tránh trùng lặp
                     da_ton_tai = any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu)
                     if not da_ton_tai:
                         st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
-                        st.toast(f"Đã lưu trạm {cell_id_hien_tai} vào bản đồ!")
+                        st.toast(f"Đã lưu trạm {cell_id_hien_tai}!")
                     else:
-                        st.toast("Trạm này đã được lưu từ trước!")
+                        st.toast("Trạm này đã được lưu trước đó!")
             
-            # NÚT PHỤ: Xóa sạch bộ nhớ các điểm đã lưu nếu cần làm lại từ đầu
+            # 🛠️ CHỨC NĂNG MỚI: QUẢN LÝ VÀ XÓA TỪNG ĐIỂM ĐÃ LƯU
             if len(st.session_state.danh_sach_luu) > 0:
-                if st.button("🗑️ Xóa toàn bộ điểm đã lưu", use_container_width=True):
+                st.markdown("---")
+                st.markdown(f"### 📍 Điểm Đã Lưu ({len(st.session_state.danh_sach_luu)})")
+                
+                # Biến tạm để đánh dấu phần tử cần xóa (tránh lỗi xung đột vòng lặp Streamlit)
+                index_can_xoa = None
+                
+                # Duyệt qua danh sách để hiển thị tên và nút xóa từng điểm
+                for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
+                    col_cell_name, col_del_btn = st.columns([7, 3])
+                    with col_cell_name:
+                        st.write(f"🔹 **ID: {tram_luu[COT_CELL_ID]}**")
+                    with col_del_btn:
+                        # Tạo nút xóa nhỏ cho từng phần tử
+                        if st.button("🗑️ Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
+                            index_can_xoa = idx
+                
+                # Thực hiện xóa nếu người dùng bấm nút tương ứng
+                if index_can_xoa is not None:
+                    tram_bi_xoa = st.session_state.danh_sach_luu.pop(index_can_xoa)
+                    st.toast(f"❌ Đã xóa CELL ID: {tram_bi_xoa[COT_CELL_ID]}")
+                    st.rerun()
+
+                # Nút xóa sạch tất cả như cũ
+                st.write("")
+                if st.button("🗑️ Xóa tất cả điểm lưu", type="secondary", use_container_width=True):
                     st.session_state.danh_sach_luu = []
                     st.session_state.tram_hien_tai = None
                     st.rerun()
 
-                st.info(f"💡 Đang ghim cố định **{len(st.session_state.danh_sach_luu)}** điểm trên bản đồ.")
-
-        # Định vị góc nhìn bản đồ dựa trên trạm vừa tìm được
+        # Định vị góc nhìn bản đồ
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -246,7 +262,7 @@ else:
         
         folium.LayerControl().add_to(m)
 
-        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (Màu xanh dương để phân biệt)
+        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l = float(tram_luu[COT_VI_DO])
             lon_l = float(tram_luu[COT_KINH_DO])
@@ -269,10 +285,10 @@ else:
             folium.Marker(
                 [lat_l, lon_l],
                 tooltip=folium.Tooltip(noi_dung_luu, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                icon=folium.Icon(color='blue', icon='bookmark') # Điểm đã lưu ghim Màu Xanh Dương
+                icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
-        # 🔴 VẼ ĐIỂM ĐANG TÌM KIẾM HIỆN TẠI (Màu đỏ lơ lửng)
+        # 🔴 VẼ ĐIỂM ĐANG TÌM KIẾM HIỆN TẠI
         if st.session_state.tram_hien_tai is not None:
             cgi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
@@ -293,7 +309,7 @@ else:
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                icon=folium.Icon(color='red', icon='info-sign') # Điểm đang tìm kiếm ghim Màu Đỏ
+                icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
         with col_right_map:
