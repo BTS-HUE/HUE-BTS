@@ -35,7 +35,7 @@ st.markdown(
     
     label { font-weight: bold !important; }
     
-    /* 🛠️ FIX CSS: Căn chỉnh khung thông tin luôn CHÍNH GIỮA phía trên Marker */
+    /* 🛠️ CĂN CHỈNH CSS: Ép khung thông tin Tooltip cân bằng ở chính giữa */
     .leaflet-tooltip-top::before { 
         border-top-color: #d9534f !important; 
         left: 50% !important;
@@ -47,7 +47,7 @@ st.markdown(
         border-radius: 8px !important;
         box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
         padding: 12px !important;
-        transform: translateX(-50%) !important; /* Đẩy khung về chính giữa trục tọa độ */
+        transform: translateX(-50%) !important; /* Đẩy khung về tâm đối xứng của Marker */
     }
     .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
     </style>
@@ -115,7 +115,7 @@ if not st.session_state.logged_in:
 else:
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
     with col_main_title:
-        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁS SÓNG")
+        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
     with col_logout_btn:
         st.write("") 
         if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
@@ -124,7 +124,7 @@ else:
 
     st.markdown("---")
 
-    # Layout cố định
+    # Chia layout cố định: Cột trái (Form nhập liệu) | Cột phải (Khu vực hiển thị bản đồ)
     col_left_search, col_right_map = st.columns([2.0, 8.0])
 
     with col_left_search:
@@ -162,6 +162,7 @@ else:
                 return row[k]
         return "Không có dữ liệu"
 
+    # Xử lý dữ liệu và dựng bản đồ
     try:
         df = tai_du_lieu()
         
@@ -194,7 +195,7 @@ else:
                 with col_left_search:
                     st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
 
-        # KHỞI TẠO BẢN ĐỒ
+        # KHỞI TẠO BẢN ĐỒ FOLIUM
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
         folium.TileLayer(
@@ -214,7 +215,7 @@ else:
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
-            # 📦 ĐÓNG GÓI NỘI DUNG: Địa chỉ nằm hoàn toàn bên trong khung đỏ tra cứu trạm
+            # 📦 NỘI DUNG LABEL: Gom địa chỉ gọn gàng vào trong một khung duy nhất
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 THÔNG TIN TRẠM</h4>
@@ -226,10 +227,16 @@ else:
             </div>
             """
             
-            # Khởi tạo Marker và ép Tooltip luôn nằm ở ĐỈNH CHÍNH GIỮA (direction="top")
+            # 🎯 CẤU HÌNH MARKER: Đẩy offset=(0, -45) giúp đẩy hẳn khung thông tin lên trên, lộ ghim tọa độ
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
+                tooltip=folium.Tooltip(
+                    noi_dung_label, 
+                    permanent=True, 
+                    direction="top", 
+                    sticky=False,
+                    offset=(0, -45) # Khoảng cách lùi lên trên (theo pixel) giúp giải phóng không gian cho Marker
+                ),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
