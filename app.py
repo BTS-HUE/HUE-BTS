@@ -80,7 +80,7 @@ st.markdown(
 )
 
 # ==============================================================================
-# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP (Lưu lại ô tài khoản cố định)
+# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP (Chặn điền tự động ô Đăng Nhập)
 # ==============================================================================
 if not st.session_state.logged_in:
     col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
@@ -95,6 +95,19 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
+
+    # 🛠️ Chêm mã JavaScript chặn triệt để tính năng Autofill lịch sử của các trình duyệt
+    st.markdown(
+        """
+        <script>
+        var inputs = window.parent.document.querySelectorAll('input');
+        inputs.forEach(function(input) {
+            input.setAttribute('autocomplete', 'new-password');
+        });
+        </script>
+        """,
+        unsafe_allow_html=True
+    )
 
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
     st.markdown(
@@ -187,8 +200,7 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            # ✨ CẢI TIẾN THÊM: form_clear_on_submit=True giúp tự làm sạch ô nhập dữ liệu ngay khi bấm Tìm kiếm
-            with st.form("form_tra_cuu", clear_on_submit=True):
+            with st.form("form_tra_cuu"):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
                 f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
                 f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
@@ -200,6 +212,19 @@ else:
                 
                 nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
             
+            # 🛠️ Chêm mã lệnh ép trình duyệt tắt hẳn gợi ý lịch sử (Autocomplete) của 4 ô tìm kiếm
+            st.markdown(
+                """
+                <script>
+                var inputs = window.parent.document.querySelectorAll('input');
+                inputs.forEach(function(input) {
+                    input.setAttribute('autocomplete', 'one-time-code');
+                });
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
+
             if nut_tim_kiem:
                 if f1 and f2 and f3 and f4:
                     ket_qua = df[
@@ -212,6 +237,13 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
+                        
+                        st.session_state.mcc_in = ""
+                        st.session_state.mnc_in = ""
+                        st.session_state.lac_in = ""
+                        st.session_state.cell_val_reset = f4  # Lưu tạm cell id để ghim
+                        st.session_state.cell_in = ""
+                        st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
                         st.warning("⚠️ Không tìm thấy trạm!")
