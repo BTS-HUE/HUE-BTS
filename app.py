@@ -35,13 +35,19 @@ st.markdown(
     
     label { font-weight: bold !important; }
     
-    .leaflet-tooltip-top::before { border-top-color: #d9534f !important; }
+    /* 🛠️ FIX CSS: Căn chỉnh khung thông tin luôn CHÍNH GIỮA phía trên Marker */
+    .leaflet-tooltip-top::before { 
+        border-top-color: #d9534f !important; 
+        left: 50% !important;
+        margin-left: -6px !important;
+    }
     .leaflet-tooltip {
         background-color: white !important;
         border: 2px solid #d9534f !important;
         border-radius: 8px !important;
         box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
-        padding: 10px !important;
+        padding: 12px !important;
+        transform: translateX(-50%) !important; /* Đẩy khung về chính giữa trục tọa độ */
     }
     .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
     </style>
@@ -109,7 +115,7 @@ if not st.session_state.logged_in:
 else:
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
     with col_main_title:
-        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁT SÓNG")
+        st.title("🛰️ HỆ THỐNG TRA CỨU TRẠM PHÁS SÓNG")
     with col_logout_btn:
         st.write("") 
         if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
@@ -118,10 +124,9 @@ else:
 
     st.markdown("---")
 
-    # Chia layout cố định: Cột trái (Form nhập liệu) | Cột phải (Khu vực hiển thị bản đồ)
+    # Layout cố định
     col_left_search, col_right_map = st.columns([2.0, 8.0])
 
-    # ĐƯA FORM NHẬP LIỆU RA NGOÀI VÙNG NGUY HIỂM ĐỂ LUÔN HIỂN THỊ
     with col_left_search:
         st.markdown("### 🔍 Thông Số Tra Cứu")
         f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
@@ -142,12 +147,11 @@ else:
 
     @st.cache_data(ttl=30) 
     def tai_du_lieu():
-        # Đọc trực tiếp, nếu lỗi sẽ quăng ra cho khối ngoại vi xử lý chứ không giấu lỗi
         data = pd.read_csv(URL, dtype=str)
         data.columns = data.columns.str.strip()
         for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
             if col in data.columns:
-                data[col] = data[col].astype(str).str.strip()
+                data[col] = data[col].fillna("").astype(str).str.strip()
         if 'MNC' in data.columns:
             data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
         return data
@@ -158,7 +162,6 @@ else:
                 return row[k]
         return "Không có dữ liệu"
 
-    # CHỈ BAO BỌC RIÊNG KHU VỰC XỬ LÝ DỮ LIỆU VÀ BẢN ĐỒ
     try:
         df = tai_du_lieu()
         
@@ -174,10 +177,10 @@ else:
 
         if f1 and f2 and f3 and f4:
             ket_qua = df[
-                (df[COT_MCC] == f1) & 
-                (df[COT_MNC] == f2) & 
-                (df[COT_LAC_TAC] == f3) & 
-                (df[COT_CELL_ID] == f4)
+                (df[COT_MCC].str.strip() == f1.strip()) & 
+                (df[COT_MNC].str.strip() == f2.strip()) & 
+                (df[COT_LAC_TAC].str.strip() == f3.strip()) & 
+                (df[COT_CELL_ID].str.strip() == f4.strip())
             ]
             
             if not ket_qua.empty:
@@ -211,9 +214,10 @@ else:
             dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
             ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
 
+            # 📦 ĐÓNG GÓI NỘI DUNG: Địa chỉ nằm hoàn toàn bên trong khung đỏ tra cứu trạm
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
-                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px;'>📍 Thông Tin Trạm</h4>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 THÔNG TIN TRẠM</h4>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Latitude:</b> {vi_do_xem}<br>
                 <b>Longitude:</b> {kinh_do_xem}<br>
@@ -222,6 +226,7 @@ else:
             </div>
             """
             
+            # Khởi tạo Marker và ép Tooltip luôn nằm ở ĐỈNH CHÍNH GIỮA (direction="top")
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False),
@@ -232,6 +237,5 @@ else:
             folium_static(m, height=760, width=None)
 
     except Exception as e:
-        # Nếu lỗi mạng/dữ liệu, chỉ báo lỗi ở ô bản đồ bên phải, ô nhập liệu bên trái vẫn hoạt động bình thường!
         with col_right_map:
-            st.error(f"❌ Không thể tải cơ sở dữ liệu trạm phát sóng. Vui lòng kiểm tra lại đường truyền internet hoặc quyền chia sẻ của file Google Sheets.\n\n Chi tiết lỗi: {e}")
+            st.error(f"❌ Không thể tải cơ sở dữ liệu trạm phát sóng. Chi tiết lỗi: {e}")
