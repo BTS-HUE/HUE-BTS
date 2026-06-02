@@ -2,11 +2,30 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import folium_static
+import math  # 📐 Thư viện toán học để tính khoảng cách Haversine
 # 📦 Thư viện quản lý cookie trình duyệt
 from streamlit_cookies_controller import CookieController
 
 # Khởi tạo bộ điều khiển Cookie
 cookies = CookieController()
+
+# ==============================================================================
+# 0. HÀM TOÁN HỌC TÍNH KHOẢNG CÁCH HAVERSINE (ĐƯỜNG CHIM BAY KHÉP KÍN)
+# ==============================================================================
+def tinh_haversine(lat1, lon1, lat2, lon2):
+    # Chuyển đổi tọa độ từ độ sang Radian
+    r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
+    
+    # Tính độ chênh lệch
+    dlat = r_lat2 - r_lat1
+    dlon = r_lon2 - r_lon1
+    
+    # Áp dụng công thức hình cầu Haversine
+    a = math.sin(dlat / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    BAN_KINH_TRAI_DAT_KM = 6371.0
+    return c * BAN_KINH_TRAI_DAT_KM
 
 # ==============================================================================
 # 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU
@@ -17,7 +36,6 @@ st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", 
 auth_cookie = cookies.get("bts_logged_in")
 
 if "logged_in" not in st.session_state:
-    # Nếu có cookie hợp lệ, tự động đăng nhập luôn
     if auth_cookie == "authenticated_secure_token_tuan":
         st.session_state.logged_in = True
     else:
@@ -81,7 +99,7 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
-        # 🔑 LƯU VÀO COOKIE: Token bảo mật lưu trên trình duyệt người dùng (Hết hạn sau 60 phút = 3600 giây)
+        # 🔑 Giờ giới hạn bảo mật phiên làm việc: 60 phút (3600 giây)
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
@@ -136,16 +154,15 @@ else:
             st.session_state.logged_in = False
             st.session_state.danh_sach_luu = []
             st.session_state.tram_hien_tai = None
-            # 🗑️ XÓA COOKIE: Khi đăng xuất, xóa cookie để ngăn tự động đăng nhập lại trái phép
             cookies.remove("bts_logged_in")
             st.rerun()
 
     st.markdown("---")
 
-    # Chia layout cố định
+    # Chia layout cột: Trái nhập liệu & quản lý, Phải hiển thị bản đồ toàn cảnh
     col_left_search, col_right_map = st.columns([2.3, 7.7])
 
-    # Kết nối dữ liệu Google Sheets
+    # Kết nối trực tiếp cơ sở dữ liệu Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
@@ -176,9 +193,10 @@ else:
         COT_VI_DO = 'Latitude'
         COT_KINH_DO = 'Longitude'
 
+        # Tọa độ mặc định ban đầu bao quát khu vực miền Trung Việt Nam
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
-        # KHƯ VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
+        # 🔍 KHU VỰC FORM TRA CỨU CỐ ĐỊNH (CỘT TRÁI)
         with col_left_search:
             with st.form("form_tra_cuu"):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
@@ -210,7 +228,7 @@ else:
                 else:
                     st.error("❌ Vui lòng nhập đủ 4 thông số!")
 
-            # Xử lý Lưu điểm
+            # Nút Lưu điểm trạm vừa tìm kiếm vào danh sách bộ nhớ tạm thời
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 if st.button(f"📌 Lưu điểm CELL ID: {cell_id_hien_tai}", type="primary", use_container_width=True):
@@ -221,16 +239,50 @@ else:
                     else:
                         st.toast("Trạm này đã được lưu trước đó!")
             
-            # QUẢN LÝ VÀ XÓA TỪNG ĐIỂM ĐÃ LƯU
-            if len(st.session_state.danh_sach_luu) > 0:
+            # 🔄 🛠️ TÍNH TOÁN KHOẢNG CÁCH TUYẾN / CHU VI VÒNG KHÉP KÍN ĐỘNG (BẤT KỂ SỐ ĐIỂM)
+            so_luong_diem = len(st.session_state.danh_sach_luu)
+            if so_luong_diem >= 2:
                 st.markdown("---")
-                st.markdown(f"### 📍 Điểm Đã Lưu ({len(st.session_state.danh_sach_luu)})")
+                st.markdown("### 📏 Khoảng Cách Tuyến")
+                
+                tong_khoang_cach = 0.0
+                ds_chi_tiet = []
+                
+                # Bước 1: Duyệt tính tuần tự các cạnh nối liên tiếp giữa các điểm ghim (1->2, 2->3, 3->4...)
+                for i in range(so_luong_diem - 1):
+                    p1 = st.session_state.danh_sach_luu[i]
+                    p2 = st.session_state.danh_sach_luu[i+1]
+                    kc = tinh_haversine(p1[COT_VI_DO], p1[COT_KINH_DO], p2[COT_VI_DO], p2[COT_KINH_DO])
+                    tong_khoang_cach += kc
+                    ds_chi_tiet.append(f"• Đoạn {i+1} → {i+2}: **{kc:.2f} km**")
+                
+                # Bước 2: THUẬT TOÁN KHOANH TRÒN: Nếu có từ 3 điểm trở lên, tự động tính cạnh khép nối từ điểm Cuối ngược về điểm Đầu
+                if so_luong_diem >= 3:
+                    p_cuoi = st.session_state.danh_sach_luu[-1]
+                    p_dau = st.session_state.danh_sach_luu[0]
+                    kc_khay_vong = tinh_haversine(p_cuoi[COT_VI_DO], p_cuoi[COT_KINH_DO], p_dau[COT_VI_DO], p_dau[COT_KINH_DO])
+                    tong_khoang_cach += kc_khay_vong
+                    ds_chi_tiet.append(f"• Đoạn {so_luong_diem} → 1 (Khép góc): **{kc_khay_vong:.2f} km**")
+                
+                # Hiển thị thống kê thông minh lên cột trái cho kỹ thuật viên theo dõi
+                if so_luong_diem == 2:
+                    st.info(f"📍 Khoảng cách đường nối:\n**{tong_khoang_cach:.2f} km**")
+                else:
+                    st.info(f"🔄 **Chu vi vùng khoanh tròn:\n{tong_khoang_cach:.2f} km**")
+                    with st.expander("Chi tiết các đoạn nối"):
+                        for dong in ds_chi_tiet:
+                            st.write(dong)
+
+            # 📌 QUẢN LÝ DANH SÁCH & BẤM XÓA TỪNG ĐIỂM ĐÃ GHIM TRÊN LAYOUT
+            if so_luong_diem > 0:
+                st.markdown("---")
+                st.markdown(f"### 📍 Điểm Đã Lưu ({so_luong_diem})")
                 
                 index_can_xoa = None
                 for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
                     col_cell_name, col_del_btn = st.columns([7, 3])
                     with col_cell_name:
-                        st.write(f"🔹 **ID: {tram_luu[COT_CELL_ID]}**")
+                        st.write(f"🔹 **({idx+1}) ID: {tram_luu[COT_CELL_ID]}**")
                     with col_del_btn:
                         if st.button("🗑️ Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
                             index_can_xoa = idx
@@ -246,13 +298,17 @@ else:
                     st.session_state.tram_hien_tai = None
                     st.rerun()
 
-        # Định vị góc nhìn bản đồ
+        # Đổi tọa độ trung tâm bản đồ tự động hướng về điểm vừa thao tác gần nhất
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
             muc_zoom = 16
+        elif so_luong_diem > 0:
+            vi_do_xem = float(st.session_state.danh_sach_luu[-1][COT_VI_DO])
+            kinh_do_xem = float(st.session_state.danh_sach_luu[-1][COT_KINH_DO])
+            muc_zoom = 14
 
-        # KHỞI TẠO BẢN ĐỒ FOLIUM
+        # KHỞI TẠO BẢN ĐỒ LỚP PHỦ FOLIUM
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
         folium.TileLayer(
@@ -267,61 +323,10 @@ else:
         
         folium.LayerControl().add_to(m)
 
-        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU
+        # Mảng thu thập danh sách tọa độ thực thi hình học hình khối
+        toa_do_vung = []
+
+        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (GHIM MÀU XANH DƯƠNG)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l = float(tram_luu[COT_VI_DO])
-            lon_l = float(tram_luu[COT_KINH_DO])
-            cgi_l = lay_thong_tin_cot(tram_luu, ['CGI', 'cgi'])
-            addr_l = lay_thong_tin_cot(tram_luu, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
-            note_l = lay_thong_tin_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
-            cell_l = tram_luu[COT_CELL_ID]
-
-            # 🛠️ ĐÃ SỬA: Thêm word-wrap và white-space để chống tràn hàng địa chỉ dài
-            noi_dung_luu = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
-                <b>CELL ID:</b> {cell_l}<br>
-                <b>CGI:</b> {cgi_l}<br>
-                <b>Latitude:</b> {lat_l}<br>
-                <b>Longitude:</b> {lon_l}<br>
-                <b>Địa chỉ:</b> {addr_l}<br>
-                <b>Ghi chú:</b> {note_l}
-            </div>
-            """
-            folium.Marker(
-                [lat_l, lon_l],
-                tooltip=folium.Tooltip(noi_dung_luu, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                icon=folium.Icon(color='blue', icon='bookmark')
-            ).add_to(m)
-
-        # 🔴 VẼ ĐIỂM ĐANG TÌM KIẾM HIỆN TẠI
-        if st.session_state.tram_hien_tai is not None:
-            cgi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
-            dia_chi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
-            ghi_chu_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
-            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
-
-            # 🛠️ ĐÃ SỬA: Thêm word-wrap và white-space để chống tràn hàng địa chỉ dài
-            noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
-                <b>CELL ID:</b> {cell_val}<br>
-                <b>CGI:</b> {cgi_val}<br>
-                <b>Latitude:</b> {vi_do_xem}<br>
-                <b>Longitude:</b> {kinh_do_xem}<br>
-                <b>Địa chỉ:</b> {dia_chi_val}<br>
-                <b>Ghi chú:</b> {ghi_chu_val}
-            </div>
-            """
-            folium.Marker(
-                [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                icon=folium.Icon(color='red', icon='info-sign')
-            ).add_to(m)
-
-        with col_right_map:
-            folium_static(m, height=760, width=None)
-
-    except Exception as e:
-        with col_right_map:
-            st.error(f"❌ Không thể tải cơ sở dữ liệu trạm phát sóng. Chi tiết lỗi: {e}")
+            lon_l = float(tram_lu
