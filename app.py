@@ -329,4 +329,79 @@ else:
         # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (GHIM MÀU XANH DƯƠNG)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l = float(tram_luu[COT_VI_DO])
-            lon_l = float(tram_lu
+            lon_l = float(tram_luu[COT_KINH_DO])
+            toa_do_vung.append([lat_l, lon_l]) # Gom tọa độ
+            
+            cgi_l = lay_thong_tin_cot(tram_luu, ['CGI', 'cgi'])
+            addr_l = lay_thong_tin_cot(tram_luu, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
+            note_l = lay_thong_tin_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
+            cell_l = tram_luu[COT_CELL_ID]
+
+            # 🛡️ CHỐNG TRÀN CHỮ: Thuộc tính word-wrap: break-word và white-space: normal bẻ gãy từ siêu dài ôm khít khung
+            noi_dung_luu = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
+                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
+                <b>CELL ID:</b> {cell_l}<br>
+                <b>CGI:</b> {cgi_l}<br>
+                <b>Latitude:</b> {lat_l}<br>
+                <b>Longitude:</b> {lon_l}<br>
+                <b>Địa chỉ:</b> {addr_l}<br>
+                <b>Ghi chú:</b> {note_l}
+            </div>
+            """
+            folium.Marker(
+                [lat_l, lon_l],
+                tooltip=folium.Tooltip(noi_dung_luu, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                icon=folium.Icon(color='blue', icon='bookmark')
+            ).add_to(m)
+
+        # 🔄 🛠️ DỰNG ĐỒ HỌA KHOANH TRÒN VÙNG TRÊN BẢN ĐỒ DỰA VÀO SỐ LƯỢNG ĐIỂM
+        if len(toa_do_vung) == 2:
+            # Nếu chỉ có 2 điểm ghim: Vẽ một đoạn thẳng nối 2 vị trí thông thường
+            folium.PolyLine(
+                locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
+            ).add_to(m)
+        elif len(toa_do_vung) >= 3:
+            # Nếu có từ 3, 4, 5 đến vô vàn điểm: Biến đổi thành đa giác khép kín tô khối mờ diện tích (Polygon)
+            folium.Polygon(
+                locations=toa_do_vung,
+                color="#0275d8",       # Màu viền nét đứt bao quanh vùng
+                weight=3,              # Độ dày viền bao
+                fill=True,             # Bật lớp phủ
+                fill_color="#0275d8",  # Màu nền trong đa giác
+                fill_opacity=0.15,     # Độ mờ 15% giúp nhìn xuyên xuống lớp nền vệ tinh bên dưới
+                dash_array='5, 5'      # Nét vẽ đứt quãng chuyên nghiệp
+            ).add_to(m)
+
+        # 🔴 VẼ ĐIỂM TRẠM ĐANG TÌM KIẾM MỚI NHẤT (GHIM MÀU ĐỎ)
+        if st.session_state.tram_hien_tai is not None:
+            cgi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
+            dia_chi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
+            ghi_chu_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
+            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
+
+            # 🛡️ CHỐNG TRÀN CHỮ: Áp dụng tương tự cho nhãn tìm kiếm trạm màu đỏ
+            noi_dung_label = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
+                <b>CELL ID:</b> {cell_val}<br>
+                <b>CGI:</b> {cgi_val}<br>
+                <b>Latitude:</b> {vi_do_xem}<br>
+                <b>Longitude:</b> {kinh_do_xem}<br>
+                <b>Địa chỉ:</b> {dia_chi_val}<br>
+                <b>Ghi chú:</b> {ghi_chu_val}
+            </div>
+            """
+            folium.Marker(
+                [vi_do_xem, kinh_do_xem],
+                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                icon=folium.Icon(color='red', icon='info-sign')
+            ).add_to(m)
+
+        # Đẩy dữ liệu bản đồ hoàn thiện lên giao diện cột phải rộng rãi
+        with col_right_map:
+            folium_static(m, height=760, width=None)
+
+    except Exception as e:
+        with col_right_map:
+            st.error(f"❌ Không thể tải cơ sở dữ liệu trạm phát sóng. Chi tiết lỗi: {e}")
