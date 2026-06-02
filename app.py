@@ -2,19 +2,31 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import folium_static
+# 📦 Thư viện quản lý cookie trình duyệt
+from streamlit_cookies_controller import CookieController
+
+# Khởi tạo bộ điều khiển Cookie
+cookies = CookieController()
 
 # ==============================================================================
 # 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
-# Khởi tạo các biến lưu trữ trong bộ nhớ phiên (Session State)
+# Đọc trạng thái đăng nhập từ Cookie trình duyệt trước để tránh bị mất khi F5
+auth_cookie = cookies.get("bts_logged_in")
+
 if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+    # Nếu có cookie hợp lệ, tự động đăng nhập luôn
+    if auth_cookie == "authenticated_secure_token_tuan":
+        st.session_state.logged_in = True
+    else:
+        st.session_state.logged_in = False
+
 if "danh_sach_luu" not in st.session_state:
-    st.session_state.danh_sach_luu = [] # Nơi lưu các trạm đã bấm "Lưu điểm"
+    st.session_state.danh_sach_luu = []
 if "tram_hien_tai" not in st.session_state:
-    st.session_state.tram_hien_tai = None # Trạm vừa kết quả tìm kiếm xong
+    st.session_state.tram_hien_tai = None
 
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "tuan"
@@ -25,11 +37,9 @@ st.markdown(
     [data-testid="stSidebarNav"] {display: none !important;}
     [data-testid="stSidebar"] {display: none !important;}
     section[data-testid="stSidebar"] {width: 0px !important; display: none !important;}
-    
     header {visibility: hidden !important; height: 0px !important;}
     footer {visibility: hidden !important;}
     #MainMenu {visibility: hidden !important;}
-    
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 0rem !important;
@@ -37,10 +47,7 @@ st.markdown(
         padding-right: 1.5rem !important;
         max-width: 100% !important;
     }
-    
     label { font-weight: bold !important; }
-    
-    /* CĂN CHỈNH CSS: Ép khung thông tin Tooltip cân bằng ở chính giữa */
     .leaflet-tooltip-top::before { 
         border-top-color: #d9534f !important; 
         left: 50% !important;
@@ -74,6 +81,8 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
+        # 🔑 LƯU VÀO COOKIE: Token bảo mật lưu trên trình duyệt người dùng (Hết hạn sau 1 ngày)
+        cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
@@ -127,11 +136,13 @@ else:
             st.session_state.logged_in = False
             st.session_state.danh_sach_luu = []
             st.session_state.tram_hien_tai = None
+            # 🗑️ XÓA COOKIE: Khi đăng xuất, xóa cookie để ngăn tự động đăng nhập lại trái phép
+            cookies.remove("bts_logged_in")
             st.rerun()
 
     st.markdown("---")
 
-    # Chia layout cố định: Cột trái (Form nhập liệu & DS lưu) | Cột phải (Bản đồ)
+    # Chia layout cố định
     col_left_search, col_right_map = st.columns([2.3, 7.7])
 
     # Kết nối dữ liệu Google Sheets
@@ -167,7 +178,7 @@ else:
 
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
-        # 🛠️ KHU VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
+        # KHƯ VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
         with col_left_search:
             with st.form("form_tra_cuu"):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
@@ -210,31 +221,25 @@ else:
                     else:
                         st.toast("Trạm này đã được lưu trước đó!")
             
-            # 🛠️ CHỨC NĂNG MỚI: QUẢN LÝ VÀ XÓA TỪNG ĐIỂM ĐÃ LƯU
+            # QUẢN LÝ VÀ XÓA TỪNG ĐIỂM ĐÃ LƯU
             if len(st.session_state.danh_sach_luu) > 0:
                 st.markdown("---")
                 st.markdown(f"### 📍 Điểm Đã Lưu ({len(st.session_state.danh_sach_luu)})")
                 
-                # Biến tạm để đánh dấu phần tử cần xóa (tránh lỗi xung đột vòng lặp Streamlit)
                 index_can_xoa = None
-                
-                # Duyệt qua danh sách để hiển thị tên và nút xóa từng điểm
                 for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
                     col_cell_name, col_del_btn = st.columns([7, 3])
                     with col_cell_name:
                         st.write(f"🔹 **ID: {tram_luu[COT_CELL_ID]}**")
                     with col_del_btn:
-                        # Tạo nút xóa nhỏ cho từng phần tử
                         if st.button("🗑️ Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
                             index_can_xoa = idx
                 
-                # Thực hiện xóa nếu người dùng bấm nút tương ứng
                 if index_can_xoa is not None:
                     tram_bi_xoa = st.session_state.danh_sach_luu.pop(index_can_xoa)
                     st.toast(f"❌ Đã xóa CELL ID: {tram_bi_xoa[COT_CELL_ID]}")
                     st.rerun()
 
-                # Nút xóa sạch tất cả như cũ
                 st.write("")
                 if st.button("🗑️ Xóa tất cả điểm lưu", type="secondary", use_container_width=True):
                     st.session_state.danh_sach_luu = []
