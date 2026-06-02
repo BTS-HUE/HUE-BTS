@@ -8,8 +8,13 @@ from streamlit_folium import folium_static
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
+# Khởi tạo các biến lưu trữ trong bộ nhớ phiên (Session State)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "danh_sach_luu" not in st.session_state:
+    st.session_state.danh_sach_luu = [] # Nơi lưu các trạm đã bấm "Lưu điểm"
+if "tram_hien_tai" not in st.session_state:
+    st.session_state.tram_hien_tai = None # Trạm vừa kết quả tìm kiếm xong
 
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "tuan"
@@ -35,7 +40,7 @@ st.markdown(
     
     label { font-weight: bold !important; }
     
-    /* 🛠️ CĂN CHỈNH CSS: Ép khung thông tin Tooltip cân bằng ở chính giữa */
+    /* CĂN CHỈNH CSS: Ép khung thông tin Tooltip cân bằng ở chính giữa */
     .leaflet-tooltip-top::before { 
         border-top-color: #d9534f !important; 
         left: 50% !important;
@@ -47,7 +52,7 @@ st.markdown(
         border-radius: 8px !important;
         box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
         padding: 12px !important;
-        transform: translateX(-50%) !important; /* Đẩy khung về tâm đối xứng của Marker */
+        transform: translateX(-50%) !important;
     }
     .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
     </style>
@@ -120,26 +125,14 @@ else:
         st.write("") 
         if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
             st.session_state.logged_in = False
+            st.session_state.danh_sach_luu = []
+            st.session_state.tram_hien_tai = None
             st.rerun()
 
     st.markdown("---")
 
     # Chia layout cố định: Cột trái (Form nhập liệu) | Cột phải (Khu vực hiển thị bản đồ)
-    col_left_search, col_right_map = st.columns([2.0, 8.0])
-
-    with col_left_search:
-        st.markdown("### 🔍 Thông Số Tra Cứu")
-        f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
-        f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
-        f3 = st.text_input("3. Số LAC/TAC:", key="lac_in").strip()
-        f4 = st.text_input("4. Số CELL ID:", key="cell_in").strip()
-
-        if f2.isdigit() and len(f2) == 1:
-            f2 = f2.zfill(2)
-
-        st.write("")
-        if not (f1 and f2 and f3 and f4):
-            st.info("💡 Nhập đầy đủ 4 thông số bên trên rồi nhấn **Enter** để tra cứu trạm trên bản đồ.")
+    col_left_search, col_right_map = st.columns([2.2, 7.8])
 
     # Kết nối dữ liệu Google Sheets
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
@@ -162,7 +155,6 @@ else:
                 return row[k]
         return "Không có dữ liệu"
 
-    # Xử lý dữ liệu và dựng bản đồ
     try:
         df = tai_du_lieu()
         
@@ -174,26 +166,70 @@ else:
         COT_KINH_DO = 'Longitude'
 
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
-        tram_tim_thay = None
 
-        if f1 and f2 and f3 and f4:
-            ket_qua = df[
-                (df[COT_MCC].str.strip() == f1.strip()) & 
-                (df[COT_MNC].str.strip() == f2.strip()) & 
-                (df[COT_LAC_TAC].str.strip() == f3.strip()) & 
-                (df[COT_CELL_ID].str.strip() == f4.strip())
-            ]
+        # 🛠️ THIẾT KẾ KHU VỰC NHẬP LIỆU VÀ NÚT BẤM (CỘT TRÁI)
+        with col_left_search:
+            # Sử dụng st.form để chặn đứng việc tự reload khi đang gõ chữ
+            with st.form("form_tra_cuu"):
+                st.markdown("### 🔍 Thông Số Tra Cứu")
+                f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
+                f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
+                f3 = st.text_input("3. Số LAC/TAC:", key="lac_in").strip()
+                f4 = st.text_input("4. Số CELL ID:", key="cell_in").strip()
+                
+                if f2.isdigit() and len(f2) == 1:
+                    f2 = f2.zfill(2)
+                
+                # NÚT 1: Tìm kiếm trạm phát sóng
+                nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
             
-            if not ket_qua.empty:
-                tram_tim_thay = ket_qua.iloc[0]
-                vi_do_xem = float(tram_tim_thay[COT_VI_DO])
-                kinh_do_xem = float(tram_tim_thay[COT_KINH_DO])
-                muc_zoom = 16 
-                with col_left_search:
-                    st.success(f"✅ Tìm thấy CELL ID: {f4}")
-            else:
-                with col_left_search:
-                    st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
+            # Xử lý khi người dùng click nút "Tìm kiếm trạm"
+            if nut_tim_kiem:
+                if f1 and f2 and f3 and f4:
+                    ket_qua = df[
+                        (df[COT_MCC].str.strip() == f1) & 
+                        (df[COT_MNC].str.strip() == f2) & 
+                        (df[COT_LAC_TAC].str.strip() == f3) & 
+                        (df[COT_CELL_ID].str.strip() == f4)
+                    ]
+                    
+                    if not ket_qua.empty:
+                        st.session_state.tram_hien_tai = ket_qua.iloc[0]
+                        st.success(f"✅ Tìm thấy CELL ID: {f4}")
+                    else:
+                        st.session_state.tram_hien_tai = None
+                        st.warning("⚠️ Không tìm thấy trạm trong hệ thống!")
+                else:
+                    st.error("❌ Vui lòng nhập đủ 4 thông số!")
+
+            # NÚT 2: Lưu điểm tọa độ đang xem (Đặt ngoài form để không bị bắt buộc bấm nút tìm kiếm)
+            st.write("---")
+            if st.session_state.tram_hien_tai is not None:
+                cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
+                
+                if st.button(f"📌 Lưu điểm CELL ID: {cell_id_hien_tai}", type="primary", use_container_width=True):
+                    # Kiểm tra xem điểm này đã được lưu trước đó chưa tránh trùng lặp
+                    da_ton_tai = any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu)
+                    if not da_ton_tai:
+                        st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
+                        st.toast(f"Đã lưu trạm {cell_id_hien_tai} vào bản đồ!")
+                    else:
+                        st.toast("Trạm này đã được lưu từ trước!")
+            
+            # NÚT PHỤ: Xóa sạch bộ nhớ các điểm đã lưu nếu cần làm lại từ đầu
+            if len(st.session_state.danh_sach_luu) > 0:
+                if st.button("🗑️ Xóa toàn bộ điểm đã lưu", use_container_width=True):
+                    st.session_state.danh_sach_luu = []
+                    st.session_state.tram_hien_tai = None
+                    st.rerun()
+
+                st.info(f"💡 Đang ghim cố định **{len(st.session_state.danh_sach_luu)}** điểm trên bản đồ.")
+
+        # Định vị góc nhìn bản đồ dựa trên trạm vừa tìm được
+        if st.session_state.tram_hien_tai is not None:
+            vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
+            kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
+            muc_zoom = 16
 
         # KHỞI TẠO BẢN ĐỒ FOLIUM
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
@@ -210,15 +246,43 @@ else:
         
         folium.LayerControl().add_to(m)
 
-        if tram_tim_thay is not None:
-            cgi_val = lay_thong_tin_cot(tram_tim_thay, ['CGI', 'cgi'])
-            dia_chi_val = lay_thong_tin_cot(tram_tim_thay, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address', 'vị trí', 'vi tri'])
-            ghi_chu_val = lay_thong_tin_cot(tram_tim_thay, ['Ghi chú', 'ghi chu', 'đố chữ', 'Note', 'note'])
+        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (Màu xanh dương để phân biệt)
+        for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
+            lat_l = float(tram_luu[COT_VI_DO])
+            lon_l = float(tram_luu[COT_KINH_DO])
+            cgi_l = lay_thong_tin_cot(tram_luu, ['CGI', 'cgi'])
+            addr_l = lay_thong_tin_cot(tram_luu, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
+            note_l = lay_thong_tin_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
+            cell_l = tram_luu[COT_CELL_ID]
 
-            # 📦 NỘI DUNG LABEL: Gom địa chỉ gọn gàng vào trong một khung duy nhất
+            noi_dung_luu = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
+                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
+                <b>CELL ID:</b> {cell_l}<br>
+                <b>CGI:</b> {cgi_l}<br>
+                <b>Latitude:</b> {lat_l}<br>
+                <b>Longitude:</b> {lon_l}<br>
+                <b>Địa chỉ:</b> {addr_l}<br>
+                <b>Ghi chú:</b> {note_l}
+            </div>
+            """
+            folium.Marker(
+                [lat_l, lon_l],
+                tooltip=folium.Tooltip(noi_dung_luu, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                icon=folium.Icon(color='blue', icon='bookmark') # Điểm đã lưu ghim Màu Xanh Dương
+            ).add_to(m)
+
+        # 🔴 VẼ ĐIỂM ĐANG TÌM KIẾM HIỆN TẠI (Màu đỏ lơ lửng)
+        if st.session_state.tram_hien_tai is not None:
+            cgi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
+            dia_chi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
+            ghi_chu_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
+            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
+
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5;'>
-                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 THÔNG TIN TRẠM</h4>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
+                <b>CELL ID:</b> {cell_val}<br>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Latitude:</b> {vi_do_xem}<br>
                 <b>Longitude:</b> {kinh_do_xem}<br>
@@ -226,18 +290,10 @@ else:
                 <b>Ghi chú:</b> {ghi_chu_val}
             </div>
             """
-            
-            # 🎯 CẤU HÌNH MARKER: Đẩy offset=(0, -45) giúp đẩy hẳn khung thông tin lên trên, lộ ghim tọa độ
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(
-                    noi_dung_label, 
-                    permanent=True, 
-                    direction="top", 
-                    sticky=False,
-                    offset=(0, -45) # Khoảng cách lùi lên trên (theo pixel) giúp giải phóng không gian cho Marker
-                ),
-                icon=folium.Icon(color='red', icon='info-sign')
+                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                icon=folium.Icon(color='red', icon='info-sign') # Điểm đang tìm kiếm ghim Màu Đỏ
             ).add_to(m)
 
         with col_right_map:
