@@ -6,6 +6,11 @@ import math  # 📐 Thư viện toán học để tính khoảng cách Haversine
 # 📦 Thư viện quản lý cookie trình duyệt
 from streamlit_cookies_controller import CookieController
 
+# ==============================================================================
+# 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU (BẮT BUỘC ĐẶT Ở ĐẦU)
+# ==============================================================================
+st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
+
 # Khởi tạo bộ điều khiển Cookie
 cookies = CookieController()
 
@@ -20,11 +25,6 @@ def tinh_haversine(lat1, lon1, lat2, lon2):
     c = 2 * math.asin(math.sqrt(a))
     BAN_KINH_TRAI_DAT_KM = 6371.0
     return c * BAN_KINH_TRAI_DAT_KM
-
-# ==============================================================================
-# 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU
-# ==============================================================================
-st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
 # Đọc trạng thái đăng nhập từ Cookie trình duyệt trước để tránh bị mất khi F5
 auth_cookie = cookies.get("bts_logged_in")
@@ -200,7 +200,8 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            with st.form("form_tra_cuu"):
+            # 🛠️ Đã thêm clear_on_submit=True để reset Form tự động, tránh lỗi Session State
+            with st.form("form_tra_cuu", clear_on_submit=True):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
                 f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
                 f2 = st.text_input("2. Số MNC:", key="mnc_in").strip()
@@ -238,11 +239,8 @@ else:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
                         
-                        st.session_state.mcc_in = ""
-                        st.session_state.mnc_in = ""
-                        st.session_state.lac_in = ""
+                        # 🛠️ Đã loại bỏ các dòng gây lỗi thay đổi trực tiếp Session State
                         st.session_state.cell_val_reset = f4  # Lưu tạm cell id để ghim
-                        st.session_state.cell_in = ""
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
