@@ -39,12 +39,12 @@ if "danh_sach_luu" not in st.session_state:
 if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
-# BIẾN TRẠNG THÁI ĐÓNG/MỞ BỘ LỌC TRÊN ĐIỆN THOẠI (Mặc định mở khi mới vào)
+# BIẾN TRẠNG THÁI ĐÓNG/MỞ BỘ LỌC TRÊN ĐIỆN THOẠI
 if "show_filter_mobile" not in st.session_state:
     st.session_state.show_filter_mobile = True
 
 # ==============================================================================
-# CSS ĐÁP ỨNG THÔNG MINH - CHUYÊN BIỆT CHO ĐIỆN THOẠI (ẨN / HIỆN FLOATING PANEL)
+# CSS ĐÁP ỨNG THÔNG MINH - CHỐNG LỆCH HÌNH NỀN & MẤT TRƯỜNG TRÊN ĐIỆN THOẠI
 # ==============================================================================
 st.markdown(
     """
@@ -60,8 +60,8 @@ st.markdown(
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 0rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
         max-width: 100% !important;
     }
     
@@ -76,23 +76,31 @@ st.markdown(
         /* Đẩy cột 1 (Bộ lọc) đè hẳn lên trên bản đồ làm bảng điều khiển nổi */
         div[data-testid="column"]:nth-of-type(1) {
             position: absolute !important;
-            top: 75px !important;
-            left: 15px !important;
-            right: 15px !important;
-            width: auto !important;
+            top: 65px !important;
+            left: 10px !important;
+            right: 10px !important;
+            width: calc(100% - 20px) !important;
             z-index: 99999 !important;
             background: transparent !important;
             padding: 0px !important;
             box-shadow: none !important;
         }
 
-        /* Định dạng khối bộ lọc màu nền trắng, chữ đen chống lỗi Dark Mode điện thoại */
+        /* Định dạng khối bộ lọc màu nền trắng, chữ đen chống lỗi Dark Mode */
         .mobile-filter-box {
             background: rgba(255, 255, 255, 0.98) !important;
             border: 1px solid #CBD5E1 !important;
             border-radius: 12px !important;
-            padding: 15px !important;
+            padding: 12px !important;
             box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.25) !important;
+            max-height: 80vh !important;
+            overflow-y: auto !important; /* Tránh tràn màn hình trên điện thoại nhỏ */
+        }
+
+        /* Sửa lỗi che khuất dữ liệu: Ép độ rộng ô nhập liệu hiển thị đủ 100% */
+        div[data-testid="column"]:nth-of-type(1) [data-testid="stTextInput"] {
+            width: 100% !important;
+            margin-bottom: 5px !important;
         }
 
         /* Ép chữ đậm, rõ ràng trong vùng bộ lọc trên điện thoại */
@@ -109,26 +117,35 @@ st.markdown(
             background-color: #FFFFFF !important;
             -webkit-text-fill-color: #0F172A !important;
             border: 1px solid #CBD5E1 !important;
+            padding: 6px !important;
         }
         
-        /* Định dạng riêng nút bấm icon Mở bộ lọc (☰) nằm lơ lửng góc trái */
+        /* Định dạng nút bấm Icon mở (☰) nổi ở góc trái bản đồ */
+        .mobile-toggle-container {
+            position: absolute !important;
+            top: 70px !important;
+            left: 15px !important;
+            z-index: 99999 !important;
+        }
+        
         .mobile-toggle-btn button {
             background-color: #1E3A8A !important;
             color: white !important;
-            border-radius: 50% !important;
-            width: 45px !important;
-            height: 45px !important;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.3) !important;
-            font-size: 18px !important;
+            border-radius: 8px !important;
+            padding: 8px 14px !important;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.3) !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            border: none !important;
         }
     }
 
     /* -------------------------------------------------------------------------- */
-    /* GIAO DIỆN TRÊN MÁY TÍNH (PC) - Giữ nguyên không thay đổi                  */
+    /* GIAO DIỆN TRÊN MÁY TÍNH (PC)                                              */
     /* -------------------------------------------------------------------------- */
     @media (min-width: 769px) {
         label { font-weight: 600 !important; color: #212529; }
-        .mobile-toggle-btn { display: none !important; } /* Ẩn nút đóng mở trên PC */
+        .mobile-toggle-container { display: none !important; }
     }
     </style>
     """,
@@ -167,11 +184,11 @@ def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
     return "Không có dữ liệu"
 
 # ==============================================================================
-# 3. PHÂN HỆ ĐĂNG NHẬP (LOGIN)
+# 3. PHÂN HỆ ĐĂNG NHẬP (LOGIN) - CỐ ĐỊNH CHỐNG LỆCH HÌNH NỀN
 # ==============================================================================
 if not st.session_state.logged_in:
     st.markdown("<style>.stApp, .stMarkdown, p, span, div, label { color: #FFFFFF !important; } input { color: #0F172A !important; background-color: #FFFFFF !important; -webkit-text-fill-color: #0F172A !important;}</style>", unsafe_allow_html=True)
-    _, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
+    _, col_login_1, col_login_2 = st.columns([6.5, 1.7, 1.8])
     with col_login_1:
         tai_khoan_nhap = st.text_input("Tài khoản hệ thống:", value="", key="username_input")
     with col_login_2:
@@ -181,17 +198,36 @@ if not st.session_state.logged_in:
         st.session_state.logged_in = True
         st.rerun()
 
+    # Sửa CSS hình nền đồng bộ cho cả Điện thoại (chống lệch) và Máy tính
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
-    st.markdown(f"<style>.stApp {{ background-image: url('{url_hinh_nen}'); background-attachment: fixed; background-size: cover; }}</style>", unsafe_allow_html=True)
-    st.markdown("<div style='background-color: rgba(15, 23, 42, 0.8); padding: 35px; border-radius: 12px; color: white; text-align: center; margin-top: 12%; box-shadow: 0px 10px 25px rgba(0,0,0,0.6);'><h2 style='color: #ffffff; font-weight: 700;'>🔒 HỆ THỐNG YÊU CẦU ĐĂNG NHẬP</h2><p style='color: #FFFFFF !important;'>Vui lòng nhập thông tin định danh tại góc phải màn hình để truy cập cơ sở dữ liệu.</p></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{ 
+            background-image: url('{url_hinh_nen}') !important; 
+            background-attachment: fixed !important; 
+            background-size: cover !important; 
+            background-position: center center !important; 
+            background-repeat: no-repeat !important;
+        }}
+        @media (max-width: 768px) {{
+            .stApp {{
+                background-size: 100% 100% !important; /* Ép hình nền vừa vặn khít khung điện thoại không lệch */
+            }}
+        }}
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+    st.markdown("<div style='background-color: rgba(15, 23, 42, 0.85); padding: 30px; border-radius: 12px; color: white; text-align: center; margin-top: 15%; box-shadow: 0px 10px 25px rgba(0,0,0,0.6); backdrop-filter: blur(5px);'><h2 style='color: #ffffff; font-weight: 700; font-size:20px;'>🔒 HỆ THỐNG YÊU CẦU ĐĂNG NHẬP</h2><p style='color: #FFFFFF !important; font-size:14px;'>Vui lòng nhập thông tin xác thực ở phía trên để truy cập cơ sở dữ liệu.</p></div>", unsafe_allow_html=True)
 
 # ==============================================================================
 # 4. PHÂN HỆ CHÍNH: BẢN ĐỒ & TRA CỨU TRẠM BTS
 # ==============================================================================
 else:
-    col_main_title, col_logout_layout = st.columns([8.5, 1.5])
+    col_main_title, col_logout_layout = st.columns([8.3, 1.7])
     with col_main_title:
-        st.markdown("<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:22px;'>🛰️ TRUNG TÂM ĐỊNH VỊ TRẠM PHÁT SÓNG BTS</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:20px;'>🛰️ TRUNG TÂM ĐỊNH VỊ TRẠM PHÁT SÓNG BTS</h2>", unsafe_allow_html=True)
     with col_logout_layout:
         if st.button("🚪 Đăng xuất", use_container_width=True, type="secondary"):
             st.session_state.logged_in = False
@@ -199,7 +235,7 @@ else:
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: #CBD5E1;'>", unsafe_allow_html=True)
 
-    # Khởi tạo bố cục: Cột left (Bộ lọc), Cột right (Bản đồ rộng 100% nền)
+    # Khởi tạo hai cột độc lập
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
@@ -207,35 +243,37 @@ else:
         COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
+        # 1. XỬ LÝ NÚT BẤM MỞ KHI BỘ LỌC ĐANG ẨN (CHỈ DÀNH CHO MOBILE)
+        if not st.session_state.show_filter_mobile:
+            st.markdown('<div class="mobile-toggle-container">', unsafe_allow_html=True)
+            if st.button("🔍 Mở bộ lọc", key="open_filter_mobile_btn", type="primary"):
+                st.session_state.show_filter_mobile = True
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
         with col_left_search:
-            # KIỂM TRA TRẠNG THÁI TRÊN ĐIỆN THOẠI ĐỂ ĐÓNG HOẶC MỞ KHUNG TÌM KIẾM
-            if not st.session_state.show_filter_mobile:
-                # Nút bấm Icon Tròn (☰) xuất hiện khi bộ lọc đang ẩn trên Mobile
-                st.markdown('<div class="mobile-toggle-btn">', unsafe_allow_html=True)
-                if st.button("☰", key="open_filter_btn"):
-                    st.session_state.show_filter_mobile = True
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-            else:
-                # Bọc toàn bộ bộ lọc vào thẻ div để áp CSS nổi trên Mobile
+            # 2. XỬ LÝ KHI BỘ LỌC ĐANG Ở TRẠNG THÁI MỞ
+            if st.session_state.show_filter_mobile:
                 st.markdown('<div class="mobile-filter-box">', unsafe_allow_html=True)
                 
-                # Nút bấm thu gọn vào góc trái (chỉ có tác dụng hiển thị trên Điện thoại)
-                st.markdown('<div class="mobile-close-container">', unsafe_allow_html=True)
-                if st.button("✖ Đóng bộ lọc tìm kiếm", key="close_filter_btn", type="secondary", use_container_width=True):
+                # Nút bấm Đóng bộ lọc
+                if st.button("✖ Ẩn bộ lọc tìm kiếm", key="close_filter_mobile_btn", type="secondary", use_container_width=True):
                     st.session_state.show_filter_mobile = False
                     st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
-                # Ruột của bộ lọc tìm kiếm trạm
-                st.markdown("<p style='font-weight:700; color:#1E3A8A; margin-top:5px; margin-bottom:5px;'>🔍 BỘ LỌC TÌM KIẾM TRẠM</p>", unsafe_allow_html=True)
+                st.markdown("<p style='font-weight:700; color:#1E3A8A; margin-top:8px; margin-bottom:4px; font-size:14px;'>🔍 THÔNG TIN TÌM KIẾM TRẠM</p>", unsafe_allow_html=True)
+                
+                # Biểu mẫu nhập liệu cố định hiển thị đầy đủ các trường
                 with st.form("form_tra_cuu", clear_on_submit=False):
-                    f1 = st.text_input("Mã quốc gia (MCC):", key="mcc_in").strip()
+                    f1 = st.text_input("Mã quốc gia (MCC):", key="mcc_in", value="452").strip()
                     f2 = st.text_input("Mã mạng di động (MNC):", key="mnc_in").strip()
                     f3 = st.text_input("Mã vùng (LAC/TAC):", key="lac_in").strip()
                     f4 = st.text_input("Mã trạm (CELL ID):", key="cell_in").strip()
-                    if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
-                    nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
+                    
+                    if f2.isdigit() and len(f2) == 1: 
+                        f2 = f2.zfill(2)
+                        
+                    nut_tim_kiem = st.form_submit_button("🎯 Bắt đầu tìm kiếm", use_container_width=True)
 
                 if nut_tim_kiem:
                     if f1 and f2 and f3 and f4:
@@ -246,43 +284,46 @@ else:
                             st.rerun()
                         else:
                             st.session_state.tram_hien_tai = None
-                            st.warning("⚠️ Không có dữ liệu!")
+                            st.warning("⚠️ Không tìm thấy dữ liệu trạm!")
                     else:
-                        st.error("❌ Điền đủ 4 thông số!")
+                        st.error("❌ Vui lòng nhập đủ cả 4 thông số!")
 
+                # Các chức năng Phụ trợ (Lưu trạm, tính khoảng cách)
                 if st.session_state.tram_hien_tai is not None:
                     cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
-                    if st.button("📌 Lưu trạm phát sóng", type="primary", use_container_width=True):
+                    if st.button("📌 Lưu trạm phát sóng này", type="primary", use_container_width=True):
                         if not any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu):
                             st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
                             st.toast(f"Đã lưu trạm {cell_id_hien_tai}")
 
                 so_luong_diem = len(st.session_state.danh_sach_luu)
                 if so_luong_diem >= 2:
-                    with st.expander("📏 Phân tích tuyến", expanded=False):
+                    with st.expander("📏 Phân tích trắc địa", expanded=False):
                         tong_khoang_cach = 0.0
                         for i in range(so_luong_diem - 1):
                             tong_khoang_cach += tinh_khoang_cach_haversine(st.session_state.danh_sach_luu[i][COT_VI_DO], st.session_state.danh_sach_luu[i][COT_KINH_DO], st.session_state.danh_sach_luu[i+1][COT_VI_DO], st.session_state.danh_sach_luu[i+1][COT_KINH_DO])
-                        st.info(f"Tổng: **{tong_khoang_cach:.2f} km**")
+                        st.info(f"Tổng tuyến: **{tong_khoang_cach:.2f} km**")
 
                 if so_luong_diem > 0:
-                    with st.expander(f"📍 Trạm đã lưu ({so_luong_diem})", expanded=False):
+                    with st.expander(f"📍 Danh sách trạm đã lưu ({so_luong_diem})", expanded=False):
                         index_can_xoa = None
                         for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
                             col_cell_name, col_del_btn = st.columns([6, 4])
-                            with col_cell_name: st.markdown(f"<div style='font-size:12px;'>ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
+                            with col_cell_name: 
+                                st.markdown(f"<div style='font-size:12px; padding-top:4px;'>ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
                             with col_del_btn:
-                                if st.button("Xóa", key=f"del_{idx}", use_container_width=True): index_can_xoa = idx
+                                if st.button("Xóa", key=f"del_{idx}", use_container_width=True): 
+                                    index_can_xoa = idx
                         if index_can_xoa is not None:
                             st.session_state.danh_sach_luu.pop(index_can_xoa)
                             st.rerun()
-                        if st.button("🗑️ Xóa sạch bộ nhớ", type="secondary", use_container_width=True):
+                        if st.button("🗑️ Xóa sạch bộ nhớ tạm", type="secondary", use_container_width=True):
                             st.session_state.danh_sach_luu, st.session_state.tram_hien_tai = [], None
                             st.rerun()
 
-                st.markdown('</div>', unsafe_allow_html=True) # Đóng khối mobile-filter-box
+                st.markdown('</div>', unsafe_allow_html=True)
 
-        # Tính toán tọa độ hiển thị bản đồ
+        # Định vị tọa độ bản đồ
         so_luong_diem = len(st.session_state.danh_sach_luu)
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 16
@@ -309,8 +350,9 @@ else:
             folium.Marker([vi_do_xem, kinh_do_xem], popup=folium.Popup(noi_dung_label, max_width=220, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
 
         with col_right_map:
-            # Bản đồ lớn cố định 740px trên màn hình máy tính lẫn điện thoại
+            # Bản đồ lớn cao 740px toàn diện diện tích
             folium_static(m, height=740, width=None)
 
     except Exception as e:
-        with col_right_map: st.error(f"❌ Lỗi hệ thống: {e}")
+        with col_right_map: 
+            st.error(f"❌ Lỗi: {e}")
