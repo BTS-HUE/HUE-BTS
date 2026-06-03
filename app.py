@@ -30,7 +30,7 @@ if "danh_sach_luu" not in st.session_state:
 if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
-# Giao diện CSS tùy biến (Ẩn Sidebar và Header mặc định của Streamlit)
+# Giao diện CSS tùy biến (Ẩn Sidebar, Header và căn chỉnh kích thước nút bấm)
 st.markdown(
     """
     <style>
@@ -49,6 +49,11 @@ st.markdown(
     }
     label { font-weight: 600 !important; color: #212529; }
     .stFoliumStatic { margin-top: 5px !important; width: 100% !important; }
+    
+    /* Tối ưu khoảng cách và kích thước nút bấm */
+    div.stButton > button {
+        border-radius: 6px !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -164,7 +169,8 @@ else:
     if st.query_params.get("auth_token") != TOKEN_XAC_THUC:
         st.query_params.auth_token = TOKEN_XAC_THUC
 
-    col_main_title, col_logout_btn = st.columns([8.2, 1.8])
+    # Định hình thanh tiêu đề chính và nút Đăng xuất có độ rộng vừa phải ở góc phải
+    col_main_title, col_logout_layout = st.columns([8.8, 1.2])
     with col_main_title:
         st.markdown(
             "<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:26px;'>"
@@ -172,8 +178,9 @@ else:
             "</h2>", 
             unsafe_allow_html=True
         )
-    with col_logout_btn:
-        if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True, type="secondary"):
+    with col_logout_layout:
+        st.write('<div style="margin-top: 2px;"></div>', unsafe_allow_html=True) # Căn chỉnh lề dọc nút bấm
+        if st.button("🚪 Đăng xuất", use_container_width=True, type="secondary"):
             st.query_params.clear()
             st.session_state.logged_in = False
             st.session_state.danh_sach_luu = []
@@ -207,7 +214,7 @@ else:
                 if f2.isdigit() and len(f2) == 1:
                     f2 = f2.zfill(2)
                 
-                nut_tim_kiem = st.form_submit_button("⚡ Thực thi truy vấn", use_container_width=True)
+                nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm", use_container_width=True)
             
             st.markdown(
                 """
@@ -242,7 +249,7 @@ else:
 
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
-                if st.button(f"📌 Lưu trạm {cell_id_hien_tai} vào danh sách", type="primary", use_container_width=True):
+                if st.button("📌 Lưu trạm", type="primary", use_container_width=True):
                     da_ton_tai = any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu)
                     if not da_ton_tai:
                         st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
@@ -300,7 +307,7 @@ else:
                     st.rerun()
 
                 st.write("")
-                if st.button("🗑️ Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
+                if st.button("🗑 nighttime Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
                     st.session_state.danh_sach_luu = []
                     st.session_state.tram_hien_tai = None
                     st.rerun()
@@ -357,7 +364,6 @@ else:
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
-        # Sửa lỗi logic cấu trúc vẽ đường PolyLine / Polygon tại đây
         if len(toa_do_vung) == 2:
             folium.PolyLine(
                 locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
