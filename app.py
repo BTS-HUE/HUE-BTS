@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH - SỬA LỖI ÉP KHUNG TUYỆT ĐỐI KHÔNG BỊ ĐẨY BẢN ĐỒ
+# 2. CSS ĐÁP ỨNG THÔNG MINH - ÉP KHUNG TUYỆT ĐỐI KHÔNG BỊ ĐẨY BẢN ĐỒ
 # ==============================================================================
 st.markdown(
     """
@@ -135,8 +135,8 @@ st.markdown(
         position: absolute !important;
         top: 15px !important; 
         left: 15px !important;
-        width: 320px !important; /* Độ rộng hộp tìm kiếm cố định lý tưởng */
-        z-index: 9999 !important; /* Đảm bảo luôn nằm đè lên trên bản đồ */
+        width: 320px !important; 
+        z-index: 9999 !important; 
         background: transparent !important;
         padding: 0px !important;
     }
@@ -146,7 +146,7 @@ st.markdown(
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             top: 10px !important;
             left: 10px !important;
-            width: 290px !important; /* Thu gọn vừa vặn chiều dọc điện thoại */
+            width: 290px !important; 
             max-width: 85% !important;
         }
         .stExpander {
@@ -203,6 +203,30 @@ if not st.session_state.logged_in:
         <style>
         .stApp, .stMarkdown, p, span, div, label { color: #FFFFFF !important; }
         input { color: #0F172A !important; background-color: #FFFFFF !important; -webkit-text-fill-color: #0F172A !important;}
+        
+        /* -------------------------------------------------------------------------- */
+        /* FIX: ÉP FORM ĐĂNG NHẬP NẰM NGANG CHUẨN XÁC TRÊN MOBILE                     */
+        /* -------------------------------------------------------------------------- */
+        @media (max-width: 768px) {
+            div[data-testid="stHorizontalBlock"] {
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+            }
+            /* Ẩn hoàn toàn cột khoảng trống bên trái (cột 7.0) */
+            div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+                display: none !important;
+            }
+            /* Ép 2 ô Tài khoản và Mật khẩu chia đôi giao diện 50-50 ngang nhau */
+            div[data-testid="stHorizontalBlock"] > div:nth-child(2),
+            div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+                width: 50% !important;
+                min-width: 50% !important;
+                max-width: 50% !important;
+                flex: 1 1 50% !important;
+                padding: 0 5px !important;
+            }
+        }
         </style>
         """, 
         unsafe_allow_html=True
