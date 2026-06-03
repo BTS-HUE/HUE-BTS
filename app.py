@@ -46,52 +46,77 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# CSS ĐÁP ỨNG THÔNG MINH (RESPONSIVE): THÍCH ỨNG LINH HOẠT NỀN SÁNG / NỀN TỐI
+# CSS ĐÁP ỨNG THÔNG MINH (DÙNG CHUNG PC & MOBILE - THÍCH ỨNG SÁNG/TỐI)
 # ==============================================================================
 st.markdown(
     """
     <style>
-    /* Ẩn các thành phần thanh công cụ mặc định của Streamlit */
-    [data-testid="stSidebarNav"] {display: none !important;}
-    [data-testid="stSidebar"] {display: none !important;}
-    section[data-testid="stSidebar"] {width: 0px !important; display: none !important;}
-    header {visibility: hidden !important; height: 0px !important;}
-    footer {visibility: hidden !important;}
-    #MainMenu {visibility: hidden !important;}
-    iframe[title="Manage app"], .stAppDeployButton, div[data-testid="stAppDeployButton"], footer + div {
-        display: none !important; visibility: hidden !important;
+    /* -------------------------------------------------------------------------- */
+    /* 1. ẨN CÁC THÀNH PHẦN THỪA CỦA STREAMLIT                                    */
+    /* -------------------------------------------------------------------------- */
+    [data-testid="stSidebarNav"], [data-testid="stSidebar"], section[data-testid="stSidebar"], 
+    header, footer, #MainMenu, iframe[title="Manage app"], .stAppDeployButton, div[data-testid="stAppDeployButton"], footer + div {
+        display: none !important; visibility: hidden !important; width: 0px !important; height: 0px !important;
     }
     
-    /* Thiết lập khoảng cách khung viền chung */
     .block-container {
-        padding-top: 0.6rem !important;
-        padding-bottom: 0rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding: 0.6rem 1rem 0rem 1rem !important;
         max-width: 100% !important;
     }
-    
     .stFoliumStatic { margin-top: 5px !important; width: 100% !important; }
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 6px !important; }
     div.stButton > button { border-radius: 6px !important; }
 
     /* -------------------------------------------------------------------------- */
-    /* CẤU HÌNH MÁY TÍNH (PC): Sử dụng biến hệ thống để tự thích ứng Sáng/Tối     */
+    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI (ÁP DỤNG CHUNG CHO CẢ PC & ĐIỆN THOẠI)         */
     /* -------------------------------------------------------------------------- */
-    @media (min-width: 769px) {
-        label { font-weight: 600 !important; color: var(--text-color) !important; }
-        .stExpander {
-            border: 1px solid var(--border-color, #CBD5E1) !important;
-            border-radius: 6px !important;
-            background-color: var(--background-color) !important;
-        }
+    /* Ép tất cả các nhãn, chữ, thẻ div tuân thủ màu chữ hệ thống (Trắng/Đen) */
+    label, p, span, summary, div {
+        color: var(--text-color) !important;
+    }
+    
+    /* Khung bộ lọc (Expander): Tự đổi màu nền và viền theo Theme */
+    .stExpander {
+        background-color: var(--background-color) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Tiêu đề của Expander */
+    .stExpander summary p {
+        font-weight: 700 !important;
+        color: var(--text-color) !important; 
+    }
+
+    /* Ô nhập liệu (Input): Tự đổi nền xám/trắng và màu chữ tương ứng. 
+       Dùng -webkit-text-fill-color để chặn lỗi tự đổi màu chữ trên iOS/Android */
+    .stExpander input {
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    /* Nút Tìm Kiếm: Dùng màu xanh đậm và chữ trắng cố định để luôn nổi bật trên mọi nền */
+    div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
+        background-color: #1E3A8A !important; 
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        font-weight: 600 !important;
+        border: none !important;
+        transition: all 0.2s ease;
+    }
+    div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"]:hover {
+        background-color: #2563EB !important;
+        box-shadow: 0px 4px 12px rgba(37, 99, 235, 0.3) !important;
     }
 
     /* -------------------------------------------------------------------------- */
-    /* CẤU HÌNH ĐIỆN THOẠI (MOBILE): Ép nền sáng cố định để nổi bật trên bản đồ  */
+    /* 3. CẤU TRÚC LAYOUT DÀNH RIÊNG CHO MOBILE (KHÔNG CAN THIỆP MÀU SẮC NỮA)     */
     /* -------------------------------------------------------------------------- */
     @media (max-width: 768px) {
-        /* Ép cột chứa bộ lọc lơ lửng lên trên bản đồ */
+        /* Đẩy cột chứa bộ lọc lơ lửng lên trên bản đồ */
         div[data-testid="column"]:nth-of-type(1) {
             position: absolute !important;
             top: 65px !important;
@@ -101,33 +126,11 @@ st.markdown(
             z-index: 99999 !important;
             background: transparent !important;
             padding: 0px !important;
-            box-shadow: none !important;
         }
         
-        /* Đổ nền trắng cố định cho hộp tìm kiếm lơ lửng để dễ đọc trên bản đồ vệ tinh */
+        /* Tăng cường đổ bóng trên Mobile để tách bạch rõ khung chữ với bản đồ vệ tinh */
         .stExpander {
-            background: #FFFFFF !important;
-            border: 1px solid #CBD5E1 !important;
-            border-radius: 8px !important;
-            box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.2) !important;
-        }
-
-        /* Chống lỗi mất chữ trên điện thoại: Ép chữ trong hộp nổi luôn là màu tối */
-        .stExpander, .stExpander *, .stExpander label, .stExpander p, .stExpander span, .stExpander div {
-            color: #0F172A !important;
-        }
-        
-        .stExpander summary p {
-            font-weight: 700 !important;
-            color: #1E3A8A !important;
-        }
-        
-        /* Đảm bảo các ô nhập liệu luôn hiển thị rõ ràng trên thiết bị di động */
-        .stExpander input {
-            color: #0F172A !important;
-            background-color: #FFFFFF !important;
-            -webkit-text-fill-color: #0F172A !important;
-            border: 1px solid #CBD5E1 !important;
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4) !important;
         }
     }
     </style>
