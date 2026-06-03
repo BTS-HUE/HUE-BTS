@@ -12,15 +12,11 @@ st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", 
 
 cookies = CookieController()
 
-# Đọc trạng thái đăng nhập từ Cookie trình duyệt
-auth_cookie = cookies.get("bts_logged_in")
-
+# Khởi tạo trạng thái mặc định
 if "logged_in" not in st.session_state:
-    if auth_cookie == "authenticated_secure_token_tuan":
-        st.session_state.logged_in = True
-    else:
-        st.session_state.logged_in = False
-
+    st.session_state.logged_in = False
+if "dang_xuat" not in st.session_state:
+    st.session_state.dang_xuat = False
 if "danh_sach_luu" not in st.session_state:
     st.session_state.danh_sach_luu = []
 if "tram_hien_tai" not in st.session_state:
@@ -28,6 +24,15 @@ if "tram_hien_tai" not in st.session_state:
 
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "tuan"
+
+# Đọc trạng thái đăng nhập từ Cookie trình duyệt
+auth_cookie = cookies.get("bts_logged_in")
+
+# Xử lý độ trễ của trình duyệt khi F5: Tự động cập nhật session nếu phát hiện Cookie
+if auth_cookie == "authenticated_secure_token_tuan" and not st.session_state.logged_in:
+    if not st.session_state.dang_xuat:
+        st.session_state.logged_in = True
+        st.rerun()
 
 st.markdown(
     """
@@ -98,6 +103,7 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
+        st.session_state.dang_xuat = False
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
@@ -162,9 +168,10 @@ else:
         st.write("") 
         if st.button("🚪 Đăng xuất khỏi hệ thống", use_container_width=True):
             st.session_state.logged_in = False
+            st.session_state.dang_xuat = True  # Khóa tạm thời việc tự động login lại
             st.session_state.danh_sach_luu = []
             st.session_state.tram_hien_tai = None
-            cookies.remove("bts_logged_in")
+            cookies.set("bts_logged_in", "", max_age=0) # Xóa cookie triệt để bằng cách gán rỗng và set max_age = 0
             st.rerun()
 
     st.markdown("---")
