@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH - LINH HOẠT THEO THIẾT BỊ VÀ THAO TÁC SÁNG/TỐI
+# 2. CSS ĐÁP ỨNG THÔNG MINH - ĐÃ SỬA: ÉP BOX TÌM KIẾM LƠ LỬNG GỌN GÀNG TRÊN MOBILE
 # ==============================================================================
 st.markdown(
     """
@@ -110,27 +110,27 @@ st.markdown(
     }
 
     /* -------------------------------------------------------------------------- */
-    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG - CHỈ KÍCH HOẠT KHI ĐĂNG NHẬP TRÊN MOBILE     */
+    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG TRÊN MOBILE (GIỮ NGUYÊN PHONG CÁCH CỦA PC)    */
     /* -------------------------------------------------------------------------- */
     @media (max-width: 768px) {
-        /* Xác định khung chứa bản đồ và bộ lọc để thiết lập vị trí tương đối */
+        /* Tạo khung tương đối bao quanh khối bản đồ */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
             position: relative !important;
         }
 
-        /* Cột 1 (Bộ lọc): Bứt phá ra lơ lửng lên trên bản đồ giống hình mẫu 1000000218.jpg */
+        /* ĐƯA BỘ TÌM KIẾM LƠ LỬNG GỌN GÀNG TRÊN MOBILE GIỐNG PC VÀ HÌNH MẪU */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             position: absolute !important;
-            top: 15px !important; 
-            left: 15px !important;
-            right: 15px !important;
-            width: auto !important;
+            top: 12px !important; 
+            left: 12px !important;
+            width: 290px !important; /* Độ rộng cố định nhỏ gọn để chừa không gian trống cho bản đồ hiện ra */
+            max-width: 80% !important; /* Đảm bảo không bị tràn màn hình quá nhỏ */
             z-index: 9999 !important;
             background: transparent !important;
             padding: 0px !important;
         }
         
-        /* Cột 2 (Bản đồ): Ép giãn chiếm trọn vẹn 100% diện tích màn hình điện thoại */
+        /* Cột Bản đồ tràn rộng 100% diện tích màn hình điện thoại */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
             width: 100% !important;
             max-width: 100% !important;
@@ -138,10 +138,10 @@ st.markdown(
             padding: 0px !important;
         }
 
-        /* Tăng hiệu ứng bo tròn góc và đổ bóng sâu trên Mobile để nhìn nổi bật */
+        /* Làm mịn góc bo và đổ bóng sâu hộp tìm kiếm trên thiết bị di động */
         .stExpander {
-            border-radius: 16px !important;
-            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.25) !important;
+            border-radius: 14px !important;
+            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3) !important;
             backdrop-filter: blur(8px) !important;
         }
     }
