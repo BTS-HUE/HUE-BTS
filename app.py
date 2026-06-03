@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# CSS ĐÁP ỨNG THÔNG MINH (RESPONSIVE): TÁCH BIỆT PC VÀ MOBILE CHI TIẾT
+# CSS ĐÁP ỨNG THÔNG MINH (RESPONSIVE): THÍCH ỨNG LINH HOẠT NỀN SÁNG / NỀN TỐI
 # ==============================================================================
 st.markdown(
     """
@@ -76,19 +76,19 @@ st.markdown(
     div.stButton > button { border-radius: 6px !important; }
 
     /* -------------------------------------------------------------------------- */
-    /* CẤU HÌNH MÁY TÍNH (PC): Giữ nguyên bố cục 2 cột song song chuẩn gốc         */
+    /* CẤU HÌNH MÁY TÍNH (PC): Sử dụng biến hệ thống để tự thích ứng Sáng/Tối     */
     /* -------------------------------------------------------------------------- */
     @media (min-width: 769px) {
-        label { font-weight: 600 !important; color: #212529; }
+        label { font-weight: 600 !important; color: var(--text-color) !important; }
         .stExpander {
-            border: 1px solid #CBD5E1 !important;
+            border: 1px solid var(--border-color, #CBD5E1) !important;
             border-radius: 6px !important;
-            background-color: #F8FAFC !important;
+            background-color: var(--background-color) !important;
         }
     }
 
     /* -------------------------------------------------------------------------- */
-    /* CẤU HÌNH ĐIỆN THOẠI (MOBILE): Chuyển bộ tìm kiếm thành thanh nổi lơ lửng */
+    /* CẤU HÌNH ĐIỆN THOẠI (MOBILE): Ép nền sáng cố định để nổi bật trên bản đồ  */
     /* -------------------------------------------------------------------------- */
     @media (max-width: 768px) {
         /* Ép cột chứa bộ lọc lơ lửng lên trên bản đồ */
@@ -104,19 +104,16 @@ st.markdown(
             box-shadow: none !important;
         }
         
-        /* Đổ nền trắng, viền và đổ bóng trực tiếp vào hộp Expander để tự co giãn khi thu gọn */
+        /* Đổ nền trắng cố định cho hộp tìm kiếm lơ lửng để dễ đọc trên bản đồ vệ tinh */
         .stExpander {
-            background: rgba(255, 255, 255, 0.98) !important;
+            background: #FFFFFF !important;
             border: 1px solid #CBD5E1 !important;
             border-radius: 8px !important;
             box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.2) !important;
         }
 
-        /* Chống lỗi mất chữ trên điện thoại khi bật chế độ nền tối (Dark Mode) */
-        div[data-testid="column"]:nth-of-type(1) label,
-        div[data-testid="column"]:nth-of-type(1) p,
-        div[data-testid="column"]:nth-of-type(1) span,
-        div[data-testid="column"]:nth-of-type(1) div {
+        /* Chống lỗi mất chữ trên điện thoại: Ép chữ trong hộp nổi luôn là màu tối */
+        .stExpander, .stExpander *, .stExpander label, .stExpander p, .stExpander span, .stExpander div {
             color: #0F172A !important;
         }
         
@@ -125,8 +122,8 @@ st.markdown(
             color: #1E3A8A !important;
         }
         
-        /* Đảm bảo ô nhập liệu có chữ đen nền trắng rõ ràng */
-        div[data-testid="column"]:nth-of-type(1) input {
+        /* Đảm bảo các ô nhập liệu luôn hiển thị rõ ràng trên thiết bị di động */
+        .stExpander input {
             color: #0F172A !important;
             background-color: #FFFFFF !important;
             -webkit-text-fill-color: #0F172A !important;
@@ -251,8 +248,9 @@ if not st.session_state.logged_in:
 else:
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
+        # Thay đổi thuộc tính màu chữ tiêu đề chính thành biến hệ thống động var(--text-color)
         st.markdown(
-            "<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:22px; text-shadow: none;'>"
+            "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
             "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
             "</h2>", 
             unsafe_allow_html=True
@@ -267,7 +265,7 @@ else:
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: #CBD5E1;'>", unsafe_allow_html=True)
 
-    # Đặt tỷ lệ cột chuẩn dạng 2.4 và 7.6 để hiển thị hoàn hảo trên máy tính máy tính
+    # Đặt tỷ lệ cột chuẩn dạng 2.4 và 7.6 để hiển thị hoàn hảo trên máy tính
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
