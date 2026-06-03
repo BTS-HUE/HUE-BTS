@@ -200,7 +200,6 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            # 🛠️ Đã thêm clear_on_submit=True để reset Form tự động, tránh lỗi Session State
             with st.form("form_tra_cuu", clear_on_submit=True):
                 st.markdown("### 🔍 Thông Số Tra Cứu")
                 f1 = st.text_input("1. Số MCC:", key="mcc_in").strip()
@@ -213,7 +212,6 @@ else:
                 
                 nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
             
-            # 🛠️ Chêm mã lệnh ép trình duyệt tắt hẳn gợi ý lịch sử (Autocomplete) của 4 ô tìm kiếm
             st.markdown(
                 """
                 <script>
@@ -225,6 +223,10 @@ else:
                 """,
                 unsafe_allow_html=True
             )
+
+            # ⚙️ TÍNH NĂNG MỚI: NÚT GẠT ẨN/HIỆN THÔNG TIN BẢN ĐỒ
+            st.markdown("### ⚙️ Cài Đặt Bản Đồ")
+            hien_thi_bang_do = st.checkbox("👁️ Mở sẵn bảng thông tin (Trạm đang tìm)", value=True, help="Bỏ tích để ẩn bảng thông tin màu đỏ, giúp bản đồ thoáng hơn.")
 
             if nut_tim_kiem:
                 if f1 and f2 and f3 and f4:
@@ -238,9 +240,7 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
-                        
-                        # 🛠️ Đã loại bỏ các dòng gây lỗi thay đổi trực tiếp Session State
-                        st.session_state.cell_val_reset = f4  # Lưu tạm cell id để ghim
+                        st.session_state.cell_val_reset = f4  
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
@@ -360,7 +360,6 @@ else:
             </div>
             """
             
-            # Chỉ hiện biểu tượng ghim và tên khi hover. Click vào mới ra popup.
             folium.Marker(
                 [lat_l, lon_l],
                 popup=folium.Popup(noi_dung_luu, max_width=260),
@@ -368,7 +367,7 @@ else:
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
-        # 🔄 🛠️ DỰNG ĐỒ HỌA KHOANH TRÒN VÙNG TRÊN BẢN ĐỒ DỰA VÀO SỐ LƯỢNG ĐIỂM
+        # 🔄 DỰNG ĐỒ HỌA KHOANH TRÒN VÙNG TRÊN BẢN ĐỒ DỰA VÀO SỐ LƯỢNG ĐIỂM
         if len(toa_do_vung) == 2:
             folium.PolyLine(
                 locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
@@ -403,12 +402,22 @@ else:
             </div>
             """
             
-            # Thông tin bảng đỏ vẫn luôn mở sẵn (permanent=True) như cũ
-            folium.Marker(
-                [vi_do_xem, kinh_do_xem],
-                tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                icon=folium.Icon(color='red', icon='info-sign')
-            ).add_to(m)
+            # Xử lý logic ẩn/hiện dựa theo nút gạt
+            if hien_thi_bang_do:
+                # Mở sẵn (như cũ)
+                folium.Marker(
+                    [vi_do_xem, kinh_do_xem],
+                    tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                    icon=folium.Icon(color='red', icon='info-sign')
+                ).add_to(m)
+            else:
+                # Thu gọn lại thành Popup
+                folium.Marker(
+                    [vi_do_xem, kinh_do_xem],
+                    popup=folium.Popup(noi_dung_label, max_width=260),
+                    tooltip=f"📍 Kết quả: {cell_val}",
+                    icon=folium.Icon(color='red', icon='info-sign')
+                ).add_to(m)
 
         with col_right_map:
             folium_static(m, height=760, width=None)
