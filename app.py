@@ -70,7 +70,8 @@ st.markdown(
 # 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP (Chặn điền tự động ô Đăng Nhập)
 # ==============================================================================
 if not st.session_state.logged_in:
-    col_space, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
+    # Đã loại bỏ biến thừa col_space bằng dấu "_"
+    _, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
 
     with col_login_1:
         tai_khoan_nhap = st.text_input("Tên đăng nhập:", value="", key="username_input")
@@ -157,7 +158,8 @@ else:
     SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
 
-    @st.cache_data(ttl=30) 
+    # Đã tăng thời gian cache lên 10 phút (600 giây) để thao tác mượt hơn
+    @st.cache_data(ttl=600) 
     def tai_du_lieu():
         data = pd.read_csv(URL, dtype=str)
         data.columns = data.columns.str.strip()
@@ -168,9 +170,11 @@ else:
             data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
         return data
 
+    # Đã tối ưu hóa hàm lấy cột để không lặp list comprehension quá nhiều lần
     def lay_thong_tin_cot(row, danh_sach_ten_goi):
+        tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
         for k in row.index:
-            if k.lower().strip() in [x.lower() for x in danh_sach_ten_goi]:
+            if str(k).lower().strip() in tap_ten_goi:
                 return row[k]
         return "Không có dữ liệu"
 
@@ -223,7 +227,7 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
-                        st.session_state.cell_val_reset = f4  
+                        # Đã xóa biến st.session_state.cell_val_reset thừa ở đây
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
