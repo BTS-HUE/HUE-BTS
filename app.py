@@ -346,7 +346,6 @@ else:
             folium.Marker(
                 [lat_l, lon_l],
                 popup=folium.Popup(noi_dung_luu, max_width=260),
-                tooltip=f"Điểm {index+1} - ID: {cell_l}",
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
@@ -389,7 +388,6 @@ else:
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 popup=folium.Popup(noi_dung_label, max_width=260, show=True),
-                tooltip=f"📍 Kết quả: {cell_val}",
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
