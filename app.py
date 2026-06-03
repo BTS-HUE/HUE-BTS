@@ -2,31 +2,17 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import folium_static
-import math  # 📐 Thư viện toán học để tính khoảng cách Haversine
-# 📦 Thư viện quản lý cookie trình duyệt
+import math
 from streamlit_cookies_controller import CookieController
 
 # ==============================================================================
-# 1. CẤU HÌNH GIAO DIỆN & STYLE BAN ĐẦU (BẮT BUỘC ĐẶT Ở ĐẦU)
+# 1. KHỞI TẠO & CẤU HÌNH HỆ THỐNG
 # ==============================================================================
 st.set_page_config(page_title="Hệ Thống Trạm Phát Sóng", layout="wide", initial_sidebar_state="collapsed")
 
-# Khởi tạo bộ điều khiển Cookie
 cookies = CookieController()
 
-# ==============================================================================
-# 0. HÀM TOÁN HỌC TÍNH KHOẢNG CÁCH HAVERSINE (ĐƯỜNG CHIM BAY KHÉP KÍN)
-# ==============================================================================
-def tinh_haversine(lat1, lon1, lat2, lon2):
-    r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
-    dlat = r_lat2 - r_lat1
-    dlon = r_lon2 - r_lon1
-    a = math.sin(dlat / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin(dlon / 2)**2
-    c = 2 * math.asin(math.sqrt(a))
-    BAN_KINH_TRAI_DAT_KM = 6371.0
-    return c * BAN_KINH_TRAI_DAT_KM
-
-# Đọc trạng thái đăng nhập từ Cookie trình duyệt trước để tránh bị mất khi F5
+# Đọc trạng thái đăng nhập từ Cookie trình duyệt
 auth_cookie = cookies.get("bts_logged_in")
 
 if "logged_in" not in st.session_state:
@@ -67,10 +53,41 @@ st.markdown(
 )
 
 # ==============================================================================
-# 2. KIỂM TRA ĐIỀU KIỆN ĐĂNG NHẬP (Chặn điền tự động ô Đăng Nhập)
+# 2. HÀM TOÁN HỌC & TIỆN ÍCH XỬ LÝ
+# ==============================================================================
+def tinh_haversine(lat1, lon1, lat2, lon2):
+    r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
+    dlat = r_lat2 - r_lat1
+    dlon = r_lon2 - r_lon1
+    a = math.sin(dlat / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    BAN_KINH_TRAI_DAT_KM = 6371.0
+    return c * BAN_KINH_TRAI_DAT_KM
+
+@st.cache_data(ttl=600) 
+def tai_du_lieu():
+    SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
+    URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+    data = pd.read_csv(URL, dtype=str)
+    data.columns = data.columns.str.strip()
+    for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
+        if col in data.columns:
+            data[col] = data[col].fillna("").astype(str).str.strip()
+    if 'MNC' in data.columns:
+        data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
+    return data
+
+def lay_thong_tin_cot(row, danh_sach_ten_goi):
+    tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
+    for k in row.index:
+        if str(k).lower().strip() in tap_ten_goi:
+            return row[k]
+    return "Không có dữ liệu"
+
+# ==============================================================================
+# 3. PHÂN HỆ XÁC THỰC TÀI KHOẢN
 # ==============================================================================
 if not st.session_state.logged_in:
-    # Đã loại bỏ biến thừa col_space bằng dấu "_"
     _, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
 
     with col_login_1:
@@ -84,7 +101,6 @@ if not st.session_state.logged_in:
         cookies.set("bts_logged_in", "authenticated_secure_token_tuan", max_age=3600)
         st.rerun()
 
-    # 🛠️ Chêm mã JavaScript chặn triệt để tính năng Autofill lịch sử của các trình duyệt
     st.markdown(
         """
         <script>
@@ -136,7 +152,7 @@ if not st.session_state.logged_in:
     )
 
 # ==============================================================================
-# 3. GIAO DIỆN CHÍNH (SAU KHI ĐĂNG NHẬP THÀNH CÔNG)
+# 4. GIAO DIỆN LÀM VIỆC CHÍNH (TRA CỨU & BẢN ĐỒ)
 # ==============================================================================
 else:
     col_main_title, col_logout_btn = st.columns([8.5, 1.5])
@@ -154,29 +170,6 @@ else:
     st.markdown("---")
 
     col_left_search, col_right_map = st.columns([2.3, 7.7])
-
-    SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
-    URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
-
-    # Đã tăng thời gian cache lên 10 phút (600 giây) để thao tác mượt hơn
-    @st.cache_data(ttl=600) 
-    def tai_du_lieu():
-        data = pd.read_csv(URL, dtype=str)
-        data.columns = data.columns.str.strip()
-        for col in ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']:
-            if col in data.columns:
-                data[col] = data[col].fillna("").astype(str).str.strip()
-        if 'MNC' in data.columns:
-            data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
-        return data
-
-    # Đã tối ưu hóa hàm lấy cột để không lặp list comprehension quá nhiều lần
-    def lay_thong_tin_cot(row, danh_sach_ten_goi):
-        tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
-        for k in row.index:
-            if str(k).lower().strip() in tap_ten_goi:
-                return row[k]
-        return "Không có dữ liệu"
 
     try:
         df = tai_du_lieu()
@@ -227,7 +220,6 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"✅ Tìm thấy CELL ID: {f4}")
-                        # Đã xóa biến st.session_state.cell_val_reset thừa ở đây
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
@@ -324,7 +316,6 @@ else:
 
         toa_do_vung = []
 
-        # 🔵 VẼ CÁC ĐIỂM ĐÃ ĐƯỢC BẤM LƯU (GHIM MÀU XANH DƯƠNG)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l = float(tram_luu[COT_VI_DO])
             lon_l = float(tram_luu[COT_KINH_DO])
@@ -353,7 +344,6 @@ else:
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
-        # 🔄 DỰNG ĐỒ HỌA KHOANH TRÒN VÙNG TRÊN BẢN ĐỒ DỰA VÀO SỐ LƯỢNG ĐIỂM
         if len(toa_do_vung) == 2:
             folium.PolyLine(
                 locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
@@ -369,7 +359,6 @@ else:
                 dash_array='5, 5'      
             ).add_to(m)
 
-        # 🔴 VẼ ĐIỂM TRẠM ĐANG TÌM KIẾM MỚI NHẤT (GHIM MÀU ĐỎ)
         if st.session_state.tram_hien_tai is not None:
             cgi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = lay_thong_tin_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
@@ -388,7 +377,6 @@ else:
             </div>
             """
             
-            # 💡 Điểm tìm kiếm sẽ tự động hiện Popup khi tải (show=True) và có sẵn nút "x" để tắt
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 popup=folium.Popup(noi_dung_label, max_width=260, show=True),
