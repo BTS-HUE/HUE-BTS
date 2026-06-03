@@ -359,9 +359,12 @@ else:
                 <b>Ghi chú:</b> {note_l}
             </div>
             """
+            
+            # Chỉ hiện biểu tượng ghim và tên khi hover. Click vào mới ra popup.
             folium.Marker(
                 [lat_l, lon_l],
-                tooltip=folium.Tooltip(noi_dung_luu, permanent=True, direction="top", sticky=False, offset=(0, -45)),
+                popup=folium.Popup(noi_dung_luu, max_width=260),
+                tooltip=f"Điểm {index+1} - ID: {cell_l}",
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
@@ -399,6 +402,8 @@ else:
                 <b>Ghi chú:</b> {ghi_chu_val}
             </div>
             """
+            
+            # Thông tin bảng đỏ vẫn luôn mở sẵn (permanent=True) như cũ
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
                 tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
