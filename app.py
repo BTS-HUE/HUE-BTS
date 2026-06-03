@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# CSS ĐÁP ỨNG THÔNG MINH (DÙNG CHUNG PC & MOBILE - THÍCH ỨNG SÁNG/TỐI)
+# 2. CSS ĐÁP ỨNG THÔNG MINH - LINH HOẠT THEO THIẾT BỊ VÀ THAO TÁC SÁNG/TỐI
 # ==============================================================================
 st.markdown(
     """
@@ -63,74 +63,86 @@ st.markdown(
         padding: 0.6rem 1rem 0rem 1rem !important;
         max-width: 100% !important;
     }
-    .stFoliumStatic { margin-top: 5px !important; width: 100% !important; }
-    .stFoliumStatic > iframe { width: 100% !important; border-radius: 6px !important; }
-    div.stButton > button { border-radius: 6px !important; }
+    .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
+    .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
     /* -------------------------------------------------------------------------- */
-    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI (ÁP DỤNG CHUNG CHO CẢ PC & ĐIỆN THOẠI)         */
+    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI TỰ ĐỘNG (ÁP DỤNG CHUNG CHO PC VÀ MOBILE)       */
     /* -------------------------------------------------------------------------- */
-    /* Ép tất cả các nhãn, chữ, thẻ div tuân thủ màu chữ hệ thống (Trắng/Đen) */
     label, p, span, summary, div {
         color: var(--text-color) !important;
     }
     
-    /* Khung bộ lọc (Expander): Tự đổi màu nền và viền theo Theme */
+    /* Thiết kế Form bộ lọc đồng bộ màu theo Theme hệ thống */
     .stExpander {
         background-color: var(--background-color) !important;
         border: 1px solid var(--border-color) !important;
-        border-radius: 8px !important;
-        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 12px !important;
+        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1) !important;
     }
 
-    /* Tiêu đề của Expander */
     .stExpander summary p {
         font-weight: 700 !important;
-        color: var(--text-color) !important; 
     }
 
-    /* Ô nhập liệu (Input): Tự đổi nền xám/trắng và màu chữ tương ứng. 
-       Dùng -webkit-text-fill-color để chặn lỗi tự đổi màu chữ trên iOS/Android */
+    /* Các ô nhập liệu tự thích ứng nền Sáng/Tối */
     .stExpander input {
         background-color: var(--secondary-background-color) !important;
         color: var(--text-color) !important;
         -webkit-text-fill-color: var(--text-color) !important;
         border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
     }
 
-    /* Nút Tìm Kiếm: Dùng màu xanh đậm và chữ trắng cố định để luôn nổi bật trên mọi nền */
+    /* Nút bấm Tìm kiếm */
     div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
-        background-color: #1E3A8A !important; 
+        background-color: #3B82F6 !important; 
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
         border: none !important;
         transition: all 0.2s ease;
     }
     div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"]:hover {
         background-color: #2563EB !important;
-        box-shadow: 0px 4px 12px rgba(37, 99, 235, 0.3) !important;
+        box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
     /* -------------------------------------------------------------------------- */
-    /* 3. CẤU TRÚC LAYOUT DÀNH RIÊNG CHO MOBILE (KHÔNG CAN THIỆP MÀU SẮC NỮA)     */
+    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG - CHỈ KÍCH HOẠT KHI ĐĂNG NHẬP TRÊN MOBILE     */
     /* -------------------------------------------------------------------------- */
     @media (max-width: 768px) {
-        /* Đẩy cột chứa bộ lọc lơ lửng lên trên bản đồ */
-        div[data-testid="column"]:nth-of-type(1) {
+        /* Xác định khung chứa bản đồ và bộ lọc để thiết lập vị trí tương đối */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
+            position: relative !important;
+        }
+
+        /* Cột 1 (Bộ lọc): Bứt phá ra lơ lửng lên trên bản đồ giống hình mẫu 1000000218.jpg */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             position: absolute !important;
-            top: 65px !important;
+            top: 15px !important; 
             left: 15px !important;
             right: 15px !important;
             width: auto !important;
-            z-index: 99999 !important;
+            z-index: 9999 !important;
             background: transparent !important;
             padding: 0px !important;
         }
         
-        /* Tăng cường đổ bóng trên Mobile để tách bạch rõ khung chữ với bản đồ vệ tinh */
+        /* Cột 2 (Bản đồ): Ép giãn chiếm trọn vẹn 100% diện tích màn hình điện thoại */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 100% !important;
+            padding: 0px !important;
+        }
+
+        /* Tăng hiệu ứng bo tròn góc và đổ bóng sâu trên Mobile để nhìn nổi bật */
         .stExpander {
-            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4) !important;
+            border-radius: 16px !important;
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.25) !important;
+            backdrop-filter: blur(8px) !important;
         }
     }
     </style>
@@ -139,7 +151,7 @@ st.markdown(
 )
 
 # ==============================================================================
-# 2. THUẬT TOÁN XỬ LÝ TOÁN HỌC & ĐỊA LÝ
+# 3. THUẬT TOÁN XỬ LÝ TOÁN HỌC & ĐỊA LÝ
 # ==============================================================================
 def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
     r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
@@ -173,7 +185,7 @@ def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
     return "Không có dữ liệu"
 
 # ==============================================================================
-# 3. PHÂN HỆ KHÓA XÁC THỰC TRUY CẬP (LOGIN)
+# 4. PHÂN HỆ KHÓA XÁC THỰC TRUY CẬP (LOGIN)
 # ==============================================================================
 if not st.session_state.logged_in:
     st.markdown(
@@ -246,12 +258,11 @@ if not st.session_state.logged_in:
     )
 
 # ==============================================================================
-# 4. PHÂN HỆ ĐIỀU HÀNH CHÍNH (BẢN ĐỒ & TRA CỨU HẠ TẦNG)
+# 5. PHÂN HỆ ĐIỀU HÀNH CHÍNH (BẢN ĐỒ & TRA CỨU HẠ TẦNG)
 # ==============================================================================
 else:
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
-        # Thay đổi thuộc tính màu chữ tiêu đề chính thành biến hệ thống động var(--text-color)
         st.markdown(
             "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
             "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
@@ -266,9 +277,9 @@ else:
             st.session_state.tram_hien_tai = None
             st.rerun()
 
-    st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: #CBD5E1;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: var(--border-color);'>", unsafe_allow_html=True)
 
-    # Đặt tỷ lệ cột chuẩn dạng 2.4 và 7.6 để hiển thị hoàn hảo trên máy tính
+    # Đặt lại tỷ lệ cột gốc [2.4, 7.6] -> Đảm bảo PC hiển thị song song tuyệt đối không chồng lấn
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
@@ -284,18 +295,17 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            # Thanh bộ lọc tìm kiếm linh hoạt (Tự lơ lửng & Co giãn trên mobile, cố định trên PC)
-            with st.expander("🔍 Bộ lọc tìm kiếm trạm", expanded=True):
+            with st.expander("🔍 Tìm kiếm trạm", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
-                    f1 = st.text_input("Mã quốc gia (MCC):", key="mcc_in").strip()
-                    f2 = st.text_input("Mã mạng di động (MNC):", key="mnc_in").strip()
-                    f3 = st.text_input("Mã vùng (LAC/TAC):", key="lac_in").strip()
-                    f4 = st.text_input("Mã trạm (CELL ID):", key="cell_in").strip()
+                    f1 = st.text_input("MCC (Country):", key="mcc_in").strip()
+                    f2 = st.text_input("MNC (Network):", key="mnc_in").strip()
+                    f3 = st.text_input("LAC / TAC:", key="lac_in").strip()
+                    f4 = st.text_input("Cell ID:", key="cell_in").strip()
                     
                     if f2.isdigit() and len(f2) == 1:
                         f2 = f2.zfill(2)
                     
-                    nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm trạm", use_container_width=True)
+                    nut_tim_kiem = st.form_submit_button("🔍 Lọc & Định vị", use_container_width=True)
             
             st.markdown(
                 """
@@ -324,13 +334,13 @@ else:
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
-                        st.warning("⚠️ Không có dữ liệu phù hợp!")
+                        st.warning("⚠️ Không có dữ liệu!")
                 else:
-                    st.error("❌ Điền đủ 4 thông số!")
+                    st.error("❌ Điền đủ thông số!")
 
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
-                if st.button("📌 Lưu trạm phát sóng", type="primary", use_container_width=True):
+                if st.button("📌 Lưu trạm", type="primary", use_container_width=True):
                     da_ton_tai = any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu)
                     if not da_ton_tai:
                         st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
@@ -341,17 +351,17 @@ else:
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
             if so_luong_diem >= 2:
-                with st.expander("📏 Phân tích trắc địa tuyến", expanded=False):
+                with st.expander("📏 Khoảng cách tuyến", expanded=False):
                     tong_khoang_cach = 0.0
                     for i in range(so_luong_diem - 1):
                         p1 = st.session_state.danh_sach_luu[i]
                         p2 = st.session_state.danh_sach_luu[i+1]
                         kc = tinh_khoang_cach_haversine(p1[COT_VI_DO], p1[COT_KINH_DO], p2[COT_VI_DO], p2[COT_KINH_DO])
                         tong_khoang_cach += kc
-                    st.info(f"Tổng tuyến: **{tong_khoang_cach:.2f} km**")
+                    st.info(f"Tổng: **{tong_khoang_cach:.2f} km**")
 
             if so_luong_diem > 0:
-                with st.expander(f"📍 Trạm đã lưu vào máy ({so_luong_diem})", expanded=False):
+                with st.expander(f"📍 Danh sách đã lưu ({so_luong_diem})", expanded=False):
                     index_can_xoa = None
                     for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
                         col_cell_name, col_del_btn = st.columns([6, 4])
@@ -365,12 +375,11 @@ else:
                         st.session_state.danh_sach_luu.pop(index_can_xoa)
                         st.rerun()
 
-                    if st.button("🗑️ Xóa sạch danh sách", type="secondary", use_container_width=True):
+                    if st.button("🗑️ Xóa sạch", type="secondary", use_container_width=True):
                         st.session_state.danh_sach_luu = []
                         st.session_state.tram_hien_tai = None
                         st.rerun()
 
-        # Cân đối tọa độ điểm nhìn
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -405,7 +414,6 @@ else:
             addr_l = truy_xuat_du_lieu_cot(tram_luu, ['Địa chỉ', 'dia chi', 'Address'])
             cell_l = tram_luu[COT_CELL_ID]
 
-            # Thêm Vĩ độ & Kinh độ vào 1 dòng trong Popup Trạm lưu
             noi_dung_luu = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
                 <b>📌 TRẠM LƯU [{index+1}]</b><br>
@@ -429,7 +437,6 @@ else:
             lat_val = st.session_state.tram_hien_tai[COT_VI_DO]
             lon_val = st.session_state.tram_hien_tai[COT_KINH_DO]
 
-            # Cập nhật Popup: Cell ID lên tiêu đề, Vĩ độ và Kinh độ đưa vào 1 dòng chung
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
                 <b style='color: #D9534F;'>🎯 KẾT QUẢ TÌM KIẾM: {cell_val}</b><br>
@@ -441,7 +448,6 @@ else:
             folium.Marker([vi_do_xem, kinh_do_xem], popup=folium.Popup(noi_dung_label, max_width=240, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
 
         with col_right_map:
-            # Chiều cao 730px tối ưu hiển thị bản đồ rộng và đẹp mắt
             folium_static(m, height=730, width=None)
 
     except Exception as e:
