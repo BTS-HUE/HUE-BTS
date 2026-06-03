@@ -307,7 +307,7 @@ else:
                     st.rerun()
 
                 st.write("")
-                if st.button("🗑 nighttime Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
+                if st.button("🗑️ Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
                     st.session_state.danh_sach_luu = []
                     st.session_state.tram_hien_tai = None
                     st.rerun()
