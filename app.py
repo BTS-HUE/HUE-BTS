@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH - ĐÃ SỬA: ÉP BOX TÌM KIẾM LƠ LỬNG GỌN GÀNG TRÊN MOBILE
+# 2. CSS ĐÁP ỨNG THÔNG MINH - SỬA LỖI ÉP KHUNG TUYỆT ĐỐI KHÔNG BỊ ĐẨY BẢN ĐỒ
 # ==============================================================================
 st.markdown(
     """
@@ -67,7 +67,7 @@ st.markdown(
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
     /* -------------------------------------------------------------------------- */
-    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI TỰ ĐỘNG (ÁP DỤNG CHUNG CHO PC VÀ MOBILE)       */
+    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI TỰ ĐỘNG                                       */
     /* -------------------------------------------------------------------------- */
     label, p, span, summary, div {
         color: var(--text-color) !important;
@@ -110,35 +110,45 @@ st.markdown(
     }
 
     /* -------------------------------------------------------------------------- */
-    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG TRÊN MOBILE (GIỮ NGUYÊN PHONG CÁCH CỦA PC)    */
+    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG KHÔNG BỊ PHỤ THUỘC VÀO EXPANDER TRÊN MOBILE  */
     /* -------------------------------------------------------------------------- */
+    /* Khóa cứng chiều cao tổng thể của hàng bằng chiều cao bản đồ (730px) */
+    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
+        position: relative !important;
+        display: block !important;
+        height: 730px !important; 
+    }
+
+    /* Ép Cột 2 (Bản đồ) làm lớp nền dưới cùng, trải rộng 100% không gian */
+    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 1 !important;
+        padding: 0px !important;
+    }
+
+    /* Ép Cột 1 (Bộ lọc tìm kiếm) nổi hẳn lên trên bên góc trái bản đồ */
+    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
+        position: absolute !important;
+        top: 15px !important; 
+        left: 15px !important;
+        width: 320px !important; /* Độ rộng hộp tìm kiếm cố định lý tưởng */
+        z-index: 9999 !important; /* Đảm bảo luôn nằm đè lên trên bản đồ */
+        background: transparent !important;
+        padding: 0px !important;
+    }
+
+    /* Tối ưu riêng khi co nhỏ trên màn hình Mobile cực nhỏ */
     @media (max-width: 768px) {
-        /* Tạo khung tương đối bao quanh khối bản đồ */
-        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
-            position: relative !important;
-        }
-
-        /* ĐƯA BỘ TÌM KIẾM LƠ LỬNG GỌN GÀNG TRÊN MOBILE GIỐNG PC VÀ HÌNH MẪU */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-            position: absolute !important;
-            top: 12px !important; 
-            left: 12px !important;
-            width: 290px !important; /* Độ rộng cố định nhỏ gọn để chừa không gian trống cho bản đồ hiện ra */
-            max-width: 80% !important; /* Đảm bảo không bị tràn màn hình quá nhỏ */
-            z-index: 9999 !important;
-            background: transparent !important;
-            padding: 0px !important;
+            top: 10px !important;
+            left: 10px !important;
+            width: 290px !important; /* Thu gọn vừa vặn chiều dọc điện thoại */
+            max-width: 85% !important;
         }
-        
-        /* Cột Bản đồ tràn rộng 100% diện tích màn hình điện thoại */
-        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
-            width: 100% !important;
-            max-width: 100% !important;
-            flex: 1 1 100% !important;
-            padding: 0px !important;
-        }
-
-        /* Làm mịn góc bo và đổ bóng sâu hộp tìm kiếm trên thiết bị di động */
         .stExpander {
             border-radius: 14px !important;
             box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3) !important;
@@ -279,7 +289,6 @@ else:
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: var(--border-color);'>", unsafe_allow_html=True)
 
-    # Đặt lại tỷ lệ cột gốc [2.4, 7.6] -> Đảm bảo PC hiển thị song song tuyệt đối không chồng lấn
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
