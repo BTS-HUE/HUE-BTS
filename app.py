@@ -17,9 +17,8 @@ TOKEN_XAC_THUC = "authenticated_secure_token_tuan"
 TAI_KHOAN_CHUAN = "admin"
 MAT_KHAU_CHUAN = "tuan"
 
-# BƯỚC CHUẨN HÓA quan trọng: Đồng bộ trạng thái đăng nhập giữa URL và Session State
+# Đồng bộ trạng thái đăng nhập giữa URL và Session State để chống lỗi F5
 if "logged_in" not in st.session_state:
-    # Nếu trên URL có token hợp lệ từ trước (do F5), tự động chuyển trạng thái True
     if st.query_params.get("auth_token") == TOKEN_XAC_THUC:
         st.session_state.logged_in = True
     else:
@@ -31,7 +30,7 @@ if "danh_sach_luu" not in st.session_state:
 if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
-# Giao diện CSS tinh chỉnh cho Streamlit
+# Giao diện CSS tùy biến (Ẩn Sidebar và Header mặc định của Streamlit)
 st.markdown(
     """
     <style>
@@ -103,7 +102,6 @@ if not st.session_state.logged_in:
         mat_khau_nhap = st.text_input("Mật khẩu truy cập:", type="password", key="password_input")
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
-        # Đồng bộ kích hoạt cả Session và ghi đè URL cùng lúc
         st.session_state.logged_in = True
         st.query_params.auth_token = TOKEN_XAC_THUC
         st.rerun()
@@ -163,7 +161,6 @@ if not st.session_state.logged_in:
 # 4. PHÂN HỆ ĐIỀU HÀNH CHÍNH (BẢN ĐỒ & TRA CỨU HẠ TẦNG)
 # ==============================================================================
 else:
-    # Đảm bảo URL luôn có Token bảo mật ổn định khi giao diện chính hoạt động
     if st.query_params.get("auth_token") != TOKEN_XAC_THUC:
         st.query_params.auth_token = TOKEN_XAC_THUC
 
@@ -360,8 +357,48 @@ else:
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
+        # Sửa lỗi logic cấu trúc vẽ đường PolyLine / Polygon tại đây
         if len(toa_do_vung) == 2:
             folium.PolyLine(
                 locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8, dash_array='5, 10'
             ).add_to(m)
-        elif len
+        elif len(toa_do_vung) >= 3:
+            folium.Polygon(
+                locations=toa_do_vung,
+                color="#0275d8",       
+                weight=3,              
+                fill=True,             
+                fill_color="#0275d8",  
+                fill_opacity=0.15,     
+                dash_array='5, 5'      
+            ).add_to(m)
+
+        if st.session_state.tram_hien_tai is not None:
+            cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
+            dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
+            ghi_chu_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
+            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
+
+            noi_dung_label = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
+                <b>CELL ID:</b> {cell_val}<br>
+                <b>CGI:</b> {cgi_val}<br>
+                <b>Tọa độ:</b> {vi_do_xem}, {kinh_do_xem}<br>
+                <b>Địa chỉ:</b> {dia_chi_val}<br>
+                <b>Ghi chú:</b> {ghi_chu_val}
+            </div>
+            """
+            
+            folium.Marker(
+                [vi_do_xem, kinh_do_xem],
+                popup=folium.Popup(noi_dung_label, max_width=260, show=True),
+                icon=folium.Icon(color='red', icon='info-sign')
+            ).add_to(m)
+
+        with col_right_map:
+            folium_static(m, height=750, width=None)
+
+    except Exception as e:
+        with col_right_map:
+            st.error(f"❌ Hệ thống không thể tải hoặc xử lý cơ sở dữ liệu hạ tầng toàn quốc. Chi tiết: {e}")
