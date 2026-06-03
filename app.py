@@ -32,13 +32,13 @@ can_xoa_url = False
 if "logged_in" not in st.session_state:
     if st.query_params.get("auth_token") == TOKEN_XAC_THUC:
         st.session_state.logged_in = True
-        can_xoa_url = True  # Đánh dấu cần xóa token trên thanh địa chỉ
+        can_xoa_url = True
     else:
         st.session_state.logged_in = False
 
-# [TỐI ƯU BẢO MẬT]: Nếu đã đăng nhập thành công qua URL, tiến hành xóa tham số để ẩn token
+# Nếu đã đăng nhập thành công qua URL, tiến hành xóa tham số để ẩn token
 if can_xoa_url:
-    st.query_params.clear()  # Xóa sạch các tham số ?auth_token=... trên thanh địa chỉ
+    st.query_params.clear()
 
 # Khởi tạo bộ nhớ tạm cho phiên làm việc
 if "danh_sach_luu" not in st.session_state:
@@ -46,27 +46,51 @@ if "danh_sach_luu" not in st.session_state:
 if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
-# Giao diện CSS tùy biến (Ẩn Sidebar, Header và căn chỉnh kích thước nút bấm)
+# Giao diện CSS tùy biến (Ẩn triệt để thanh công cụ, nút Manage App và tinh chỉnh Mobile)
 st.markdown(
     """
     <style>
+    /* Ẩn thanh công cụ điều hướng mặc định */
     [data-testid="stSidebarNav"] {display: none !important;}
     [data-testid="stSidebar"] {display: none !important;}
     section[data-testid="stSidebar"] {width: 0px !important; display: none !important;}
     header {visibility: hidden !important; height: 0px !important;}
     footer {visibility: hidden !important;}
     #MainMenu {visibility: hidden !important;}
+    
+    /* Ẩn triệt để nút "Manage app" xuất hiện ở góc phải */
+    iframe[title="Manage app"], 
+    .stAppDeployButton, 
+    div[data-testid="stAppDeployButton"],
+    footer + div {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        width: 0px !important;
+    }
+    
+    /* Cấu trúc lại khoảng cách khung hiển thị */
     .block-container {
         padding-top: 0.8rem !important;
         padding-bottom: 0rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
         max-width: 100% !important;
     }
     label { font-weight: 600 !important; color: #212529; }
-    .stFoliumStatic { margin-top: 5px !important; width: 100% !important; }
     
-    /* Tối ưu khoảng cách và kích thước nút bấm */
+    /* Ép Bản đồ hiển thị full độ rộng màn hình thiết bị di động */
+    .stFoliumStatic { margin-top: 5px !important; width: 100% !important; }
+    .stFoliumStatic > iframe { width: 100% !important; border-radius: 8px !important; }
+    
+    /* Làm đẹp hộp cuộn (Expander) của bộ lọc */
+    .stExpander {
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 8px !important;
+        background-color: #F8FAFC !important;
+        margin-bottom: 8px !important;
+    }
+    
     div.stButton > button {
         border-radius: 6px !important;
     }
@@ -180,16 +204,16 @@ if not st.session_state.logged_in:
 # 4. PHÂN HỆ ĐIỀU HÀNH CHÍNH (BẢN ĐỒ & TRA CỨU HẠ TẦNG)
 # ==============================================================================
 else:
-    col_main_title, col_logout_layout = st.columns([8.8, 1.2])
+    # Tinh chỉnh lại tỷ lệ Header giúp hiển thị mượt mà trên cả PC và Mobile
+    col_main_title, col_logout_layout = st.columns([8.4, 1.6])
     with col_main_title:
         st.markdown(
-            "<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:26px;'>"
-            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
+            "<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:22px;'>"
+            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM BTS"
             "</h2>", 
             unsafe_allow_html=True
         )
     with col_logout_layout:
-        st.write('<div style="margin-top: 2px;"></div>', unsafe_allow_html=True)
         if st.button("🚪 Đăng xuất", use_container_width=True, type="secondary"):
             st.query_params.clear()
             st.session_state.logged_in = False
@@ -197,9 +221,10 @@ else:
             st.session_state.tram_hien_tai = None
             st.rerun()
 
-    st.markdown("<hr style='margin-top: 10px; margin-bottom: 15px; border-color: #CBD5E1;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top: 8px; margin-bottom: 12px; border-color: #CBD5E1;'>", unsafe_allow_html=True)
 
-    col_left_search, col_right_map = st.columns([2.3, 7.7])
+    # Chia cột linh hoạt: Trên PC hiển thị dạng song song, trên Mobile tự xếp chồng theo hàng dọc
+    col_left_search, col_right_map = st.columns([2.5, 7.5])
 
     try:
         df = tai_co_so_du_lieu()
@@ -214,17 +239,18 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            with st.form("form_tra_cuu", clear_on_submit=True):
-                st.markdown("<h4 style='margin:0 0 10px 0; color:#0F172A; font-size:16px;'>🔍 BỘ LỌC TÌM KIẾM TRẠM</h4>", unsafe_allow_html=True)
-                f1 = st.text_input("Mã quốc gia (MCC):", key="mcc_in").strip()
-                f2 = st.text_input("Mã mạng di động (MNC):", key="mnc_in").strip()
-                f3 = st.text_input("Mã vùng (LAC/TAC):", key="lac_in").strip()
-                f4 = st.text_input("Mã trạm (CELL ID):", key="cell_in").strip()
-                
-                if f2.isdigit() and len(f2) == 1:
-                    f2 = f2.zfill(2)
-                
-                nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm", use_container_width=True)
+            # [TỐI ƯU MOBILE]: Đưa bộ lọc vào st.expander để người dùng di động dễ dàng thu gọn/ẩn đi
+            with st.expander("🔍 Bộ lọc tìm kiếm", expanded=True):
+                with st.form("form_tra_cuu", clear_on_submit=True):
+                    f1 = st.text_input("Mã quốc gia (MCC):", key="mcc_in").strip()
+                    f2 = st.text_input("Mã mạng di động (MNC):", key="mnc_in").strip()
+                    f3 = st.text_input("Mã vùng (LAC/TAC):", key="lac_in").strip()
+                    f4 = st.text_input("Mã trạm (CELL ID):", key="cell_in").strip()
+                    
+                    if f2.isdigit() and len(f2) == 1:
+                        f2 = f2.zfill(2)
+                    
+                    nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm", use_container_width=True)
             
             st.markdown(
                 """
@@ -249,11 +275,11 @@ else:
                     
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
-                        st.success(f"🎯 Đã tìm thấy mục tiêu ID: {f4}")
+                        st.success(f"🎯 Đã tìm thấy mục tiêu: {f4}")
                         st.rerun()
                     else:
                         st.session_state.tram_hien_tai = None
-                        st.warning("⚠️ Không tìm thấy dữ liệu trạm tương thích!")
+                        st.warning("⚠️ Không tìm thấy dữ liệu trạm!")
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ cả 4 thông số kỹ thuật!")
 
@@ -269,58 +295,53 @@ else:
             
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
+            # Gói phân tích trắc địa vào expander gọn gàng
             if so_luong_diem >= 2:
-                st.markdown("<hr style='margin: 15px 0 10px 0;'>", unsafe_allow_html=True)
-                st.markdown("<h4 style='margin:0 0 10px 0; color:#0F172A; font-size:16px;'>📏 PHÂN TÍCH TRẮC ĐỊA TUYẾN</h4>", unsafe_allow_html=True)
-                
-                tong_khoang_cach = 0.0
-                ds_chi_tiet = []
-                
-                for i in range(so_luong_diem - 1):
-                    p1 = st.session_state.danh_sach_luu[i]
-                    p2 = st.session_state.danh_sach_luu[i+1]
-                    kc = tinh_khoang_cach_haversine(p1[COT_VI_DO], p1[COT_KINH_DO], p2[COT_VI_DO], p2[COT_KINH_DO])
-                    tong_khoang_cach += kc
-                    ds_chi_tiet.append(f"• Chặng {i+1} → {i+2}: **{kc:.2f} km**")
-                
-                if so_luong_diem >= 3:
-                    p_cuoi = st.session_state.danh_sach_luu[-1]
-                    p_dau = st.session_state.danh_sach_luu[0]
-                    kc_khay_vong = tinh_khoang_cach_haversine(p_cuoi[COT_VI_DO], p_cuoi[COT_KINH_DO], p_dau[COT_VI_DO], p_dau[COT_KINH_DO])
-                    tong_khoang_cach += kc_khay_vong
-                    ds_chi_tiet.append(f"• Khép góc ({so_luong_diem} → 1): **{kc_khay_vong:.2f} km**")
-                
-                if so_luong_diem == 2:
-                    st.info(f"📍 Chiều dài tuyến liên kết:\n**{tong_khoang_cach:.2f} km**")
-                else:
-                    st.info(f"🔄 Chu vi đa giác khu vực:\n**{tong_khoang_cach:.2f} km**")
-                    with st.expander("Báo cáo chi tiết từng phân đoạn"):
-                        for dong in ds_chi_tiet:
-                            st.write(dong)
+                with st.expander("📏 PHÂN TÍCH TRẮC ĐỊA TUYẾN", expanded=True):
+                    tong_khoang_cach = 0.0
+                    ds_chi_tiet = []
+                    
+                    for i in range(so_luong_diem - 1):
+                        p1 = st.session_state.danh_sach_luu[i]
+                        p2 = st.session_state.danh_sach_luu[i+1]
+                        kc = tinh_khoang_cach_haversine(p1[COT_VI_DO], p1[COT_KINH_DO], p2[COT_VI_DO], p2[COT_KINH_DO])
+                        tong_khoang_cach += kc
+                        ds_chi_tiet.append(f"• Chặng {i+1} → {i+2}: **{kc:.2f} km**")
+                    
+                    if so_luong_diem >= 3:
+                        p_cuoi = st.session_state.danh_sach_luu[-1]
+                        p_dau = st.session_state.danh_sach_luu[0]
+                        kc_khay_vong = tinh_khoang_cach_haversine(p_cuoi[COT_VI_DO], p_cuoi[COT_KINH_DO], p_dau[COT_VI_DO], p_dau[COT_KINH_DO])
+                        tong_khoang_cach += kc_khay_vong
+                        ds_chi_tiet.append(f"• Khép góc ({so_luong_diem} → 1): **{kc_khay_vong:.2f} km**")
+                    
+                    if so_luong_diem == 2:
+                        st.info(f"📍 Chiều dài tuyến liên kết:\n**{tong_khoang_cach:.2f} km**")
+                    else:
+                        st.info(f"🔄 Chu vi đa giác khu vực:\n**{tong_khoang_cach:.2f} km**")
 
+            # Gói danh sách lưu vào expander và mặc định đóng (expanded=False) để không chiếm diện tích mobile
             if so_luong_diem > 0:
-                st.markdown("<hr style='margin: 15px 0 10px 0;'>", unsafe_allow_html=True)
-                st.markdown(f"<h4 style='margin:0 0 10px 0; color:#0F172A; font-size:16px;'>📍 DANH SÁCH ĐIỂM ĐÃ LƯU ({so_luong_diem})</h4>", unsafe_allow_html=True)
-                
-                index_can_xoa = None
-                for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
-                    col_cell_name, col_del_btn = st.columns([7, 3])
-                    with col_cell_name:
-                        st.markdown(f"<div style='padding-top:4px;'><b>[{idx+1}]</b> ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
-                    with col_del_btn:
-                        if st.button("Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
-                            index_can_xoa = idx
-                
-                if index_can_xoa is not None:
-                    tram_bi_xoa = st.session_state.danh_sach_luu.pop(index_can_xoa)
-                    st.toast(f"Đã loại bỏ trạm {tram_bi_xoa[COT_CELL_ID]}.")
-                    st.rerun()
+                with st.expander(f"📍 DANH SÁCH ĐIỂM ĐÃ LƯU ({so_luong_diem})", expanded=False):
+                    index_can_xoa = None
+                    for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
+                        col_cell_name, col_del_btn = st.columns([7, 3])
+                        with col_cell_name:
+                            st.markdown(f"<div style='padding-top:4px;'><b>[{idx+1}]</b> ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
+                        with col_del_btn:
+                            if st.button("Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
+                                index_can_xoa = idx
+                    
+                    if index_can_xoa is not None:
+                        tram_bi_xoa = st.session_state.danh_sach_luu.pop(index_can_xoa)
+                        st.toast(f"Đã loại bỏ trạm {tram_bi_xoa[COT_CELL_ID]}.")
+                        st.rerun()
 
-                st.write("")
-                if st.button("🗑️ Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
-                    st.session_state.danh_sach_luu = []
-                    st.session_state.tram_hien_tai = None
-                    st.rerun()
+                    st.write("")
+                    if st.button("🗑️ Xóa toàn bộ danh sách lưu", type="secondary", use_container_width=True):
+                        st.session_state.danh_sach_luu = []
+                        st.session_state.tram_hien_tai = None
+                        st.rerun()
 
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
@@ -358,18 +379,15 @@ else:
             cell_l = tram_luu[COT_CELL_ID]
 
             noi_dung_luu = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1}) - ID: {cell_l}</h4>
-                <b>CGI:</b> {cgi_l}<br>
-                <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
-                <b>Địa chỉ:</b> {addr_l}<br>
-                <b>Ghi chú:</b> {note_l}
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4; white-space: normal;'>
+                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
+                <b>ID:</b> {cell_l}<br><b>CGI:</b> {cgi_l}<br><b>Địa chỉ:</b> {addr_l}
             </div>
             """
             
             folium.Marker(
                 [lat_l, lon_l],
-                popup=folium.Popup(noi_dung_luu, max_width=260),
+                popup=folium.Popup(noi_dung_luu, max_width=240),
                 icon=folium.Icon(color='blue', icon='bookmark')
             ).add_to(m)
 
@@ -391,27 +409,24 @@ else:
         if st.session_state.tram_hien_tai is not None:
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'địa chỉ', 'Địa Chỉ', 'Address', 'address'])
-            ghi_chu_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
 
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM - ID: {cell_val}</h4>
-                <b>CGI:</b> {cgi_val}<br>
-                <b>Tọa độ:</b> {vi_do_xem}, {kinh_do_xem}<br>
-                <b>Địa chỉ:</b> {dia_chi_val}<br>
-                <b>Ghi chú:</b> {ghi_chu_val}
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4; white-space: normal;'>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>🎯 KẾT QUẢ TÌM KIẾM</h4>
+                <b>ID:</b> {cell_val}<br><b>CGI:</b> {cgi_val}<br><b>Địa chỉ:</b> {dia_chi_val}
             </div>
             """
             
             folium.Marker(
                 [vi_do_xem, kinh_do_xem],
-                popup=folium.Popup(noi_dung_label, max_width=260, show=True),
+                popup=folium.Popup(noi_dung_label, max_width=240, show=True),
                 icon=folium.Icon(color='red', icon='info-sign')
             ).add_to(m)
 
         with col_right_map:
-            folium_static(m, height=750, width=None)
+            # Điều chỉnh chiều cao bản đồ thành 600px để hiển thị trọn vẹn lý tưởng trên điện thoại
+            folium_static(m, height=600, width=None)
 
     except Exception as e:
         with col_right_map:
