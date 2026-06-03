@@ -347,10 +347,10 @@ else:
             note_l = truy_xuat_du_lieu_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
             cell_l = tram_luu[COT_CELL_ID]
 
+            # Đã lược bỏ dòng CELL ID để thông tin hiển thị tối giản, tinh gọn hơn
             noi_dung_luu = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1})</h4>
-                <b>CELL ID:</b> {cell_l}<br>
+                <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1}) - ID: {cell_l}</h4>
                 <b>CGI:</b> {cgi_l}<br>
                 <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
                 <b>Địa chỉ:</b> {addr_l}<br>
@@ -385,10 +385,10 @@ else:
             ghi_chu_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
 
+            # Đã lược bỏ dòng CELL ID để thông tin hiển thị tối giản, tinh gọn hơn
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
-                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM</h4>
-                <b>CELL ID:</b> {cell_val}<br>
+                <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM - ID: {cell_val}</h4>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Tọa độ:</b> {vi_do_xem}, {kinh_do_xem}<br>
                 <b>Địa chỉ:</b> {dia_chi_val}<br>
