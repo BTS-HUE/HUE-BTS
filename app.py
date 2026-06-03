@@ -60,19 +60,6 @@ st.markdown(
         max-width: 100% !important;
     }
     label { font-weight: bold !important; }
-    .leaflet-tooltip-top::before { 
-        border-top-color: #d9534f !important; 
-        left: 50% !important;
-        margin-left: -6px !important;
-    }
-    .leaflet-tooltip {
-        background-color: white !important;
-        border: 2px solid #d9534f !important;
-        border-radius: 8px !important;
-        box-shadow: 0px 4px 15px rgba(0,0,0,0.3) !important;
-        padding: 12px !important;
-        transform: translateX(-50%) !important;
-    }
     .stFoliumStatic { margin-top: 10px !important; width: 100% !important; }
     </style>
     """,
@@ -223,10 +210,6 @@ else:
                 """,
                 unsafe_allow_html=True
             )
-
-            # ⚙️ TÍNH NĂNG MỚI: NÚT GẠT ẨN/HIỆN THÔNG TIN BẢN ĐỒ
-            st.markdown("### ⚙️ Cài Đặt Bản Đồ")
-            hien_thi_bang_do = st.checkbox("👁️ Mở sẵn bảng thông tin (Trạm đang tìm)", value=True, help="Bỏ tích để ẩn bảng thông tin màu đỏ, giúp bản đồ thoáng hơn.")
 
             if nut_tim_kiem:
                 if f1 and f2 and f3 and f4:
@@ -402,22 +385,13 @@ else:
             </div>
             """
             
-            # Xử lý logic ẩn/hiện dựa theo nút gạt
-            if hien_thi_bang_do:
-                # Mở sẵn (như cũ)
-                folium.Marker(
-                    [vi_do_xem, kinh_do_xem],
-                    tooltip=folium.Tooltip(noi_dung_label, permanent=True, direction="top", sticky=False, offset=(0, -45)),
-                    icon=folium.Icon(color='red', icon='info-sign')
-                ).add_to(m)
-            else:
-                # Thu gọn lại thành Popup
-                folium.Marker(
-                    [vi_do_xem, kinh_do_xem],
-                    popup=folium.Popup(noi_dung_label, max_width=260),
-                    tooltip=f"📍 Kết quả: {cell_val}",
-                    icon=folium.Icon(color='red', icon='info-sign')
-                ).add_to(m)
+            # 💡 Điểm tìm kiếm sẽ tự động hiện Popup khi tải (show=True) và có sẵn nút "x" để tắt
+            folium.Marker(
+                [vi_do_xem, kinh_do_xem],
+                popup=folium.Popup(noi_dung_label, max_width=260, show=True),
+                tooltip=f"📍 Kết quả: {cell_val}",
+                icon=folium.Icon(color='red', icon='info-sign')
+            ).add_to(m)
 
         with col_right_map:
             folium_static(m, height=760, width=None)
