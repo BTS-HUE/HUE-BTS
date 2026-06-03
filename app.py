@@ -13,16 +13,32 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-TOKEN_XAC_THUC = "authenticated_secure_token_tuan"
-TAI_KHOAN_CHUAN = "admin"
-MAT_KHAU_CHUAN = "tuan"
+# Hệ thống tự động kiểm tra cấu hình bảo mật từ Secrets hoặc mặc định
+if "auth" in st.secrets:
+    TOKEN_XAC_THUC = st.secrets["auth"]["token_xac_thuc"]
+    TAI_KHOAN_CHUAN = st.secrets["auth"]["tai_khoan_chuan"]
+    MAT_KHAU_CHUAN = st.secrets["auth"]["mat_khau_chuan"]
+    SHEET_ID = st.secrets["database"]["sheet_id"]
+else:
+    TOKEN_XAC_THUC = "authenticated_secure_token_tuan"
+    TAI_KHOAN_CHUAN = "admin"
+    MAT_KHAU_CHUAN = "tuan"
+    SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI"
 
-# Đồng bộ trạng thái đăng nhập giữa URL và Session State để chống lỗi F5
+# Biến cờ để kiểm tra xem có cần xóa tham số URL hay không
+can_xoa_url = False
+
+# Đồng bộ trạng thái đăng nhập giữa URL và Session State
 if "logged_in" not in st.session_state:
     if st.query_params.get("auth_token") == TOKEN_XAC_THUC:
         st.session_state.logged_in = True
+        can_xoa_url = True  # Đánh dấu cần xóa token trên thanh địa chỉ
     else:
         st.session_state.logged_in = False
+
+# [TỐI ƯU BẢO MẬT]: Nếu đã đăng nhập thành công qua URL, tiến hành xóa tham số để ẩn token
+if can_xoa_url:
+    st.query_params.clear()  # Xóa sạch các tham số ?auth_token=... trên thanh địa chỉ
 
 # Khởi tạo bộ nhớ tạm cho phiên làm việc
 if "danh_sach_luu" not in st.session_state:
@@ -73,7 +89,6 @@ def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
 
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
-    SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI" 
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
     data = pd.read_csv(URL, dtype=str)
     data.columns = data.columns.str.strip()
@@ -108,7 +123,6 @@ if not st.session_state.logged_in:
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
-        st.query_params.auth_token = TOKEN_XAC_THUC
         st.rerun()
 
     st.markdown(
@@ -166,20 +180,16 @@ if not st.session_state.logged_in:
 # 4. PHÂN HỆ ĐIỀU HÀNH CHÍNH (BẢN ĐỒ & TRA CỨU HẠ TẦNG)
 # ==============================================================================
 else:
-    if st.query_params.get("auth_token") != TOKEN_XAC_THUC:
-        st.query_params.auth_token = TOKEN_XAC_THUC
-
-    # Định hình thanh tiêu đề chính và nút Đăng xuất có độ rộng vừa phải ở góc phải
     col_main_title, col_logout_layout = st.columns([8.8, 1.2])
     with col_main_title:
         st.markdown(
             "<h2 style='margin:0; color:#1E3A8A; font-weight:700; font-size:26px;'>"
-            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
+            "🛰️ TRUNG TÂM GIÁM SÁV VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
             "</h2>", 
             unsafe_allow_html=True
         )
     with col_logout_layout:
-        st.write('<div style="margin-top: 2px;"></div>', unsafe_allow_html=True) # Căn chỉnh lề dọc nút bấm
+        st.write('<div style="margin-top: 2px;"></div>', unsafe_allow_html=True)
         if st.button("🚪 Đăng xuất", use_container_width=True, type="secondary"):
             st.query_params.clear()
             st.session_state.logged_in = False
@@ -347,7 +357,6 @@ else:
             note_l = truy_xuat_du_lieu_cot(tram_luu, ['Ghi chú', 'ghi chu', 'Note'])
             cell_l = tram_luu[COT_CELL_ID]
 
-            # Đã lược bỏ dòng CELL ID để thông tin hiển thị tối giản, tinh gọn hơn
             noi_dung_luu = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #0275d8; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📌 ĐIỂM ĐÃ LƯU ({index+1}) - ID: {cell_l}</h4>
@@ -385,7 +394,6 @@ else:
             ghi_chu_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Ghi chú', 'ghi chu', 'Note'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
 
-            # Đã lược bỏ dòng CELL ID để thông tin hiển thị tối giản, tinh gọn hơn
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 240px; color: #333333; line-height: 1.5; word-wrap: break-word; white-space: normal;'>
                 <h4 style='margin: 0 0 6px 0; color: #d9534f; border-bottom: 1px solid #eeeeee; padding-bottom: 4px; text-align: center;'>📍 KẾT QUẢ TÌM KIẾM - ID: {cell_val}</h4>
