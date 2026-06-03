@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH - ÉP KHUNG TUYỆT ĐỐI KHÔNG BỊ ĐẨY BẢN ĐỒ
+# 2. CSS ĐÁP ỨNG THÔNG MINH - ĐẶC TRỊ LỖI CỘT TÌM KIẾM BỊ DỌC TRÊN MOBILE
 # ==============================================================================
 st.markdown(
     """
@@ -60,20 +60,17 @@ st.markdown(
     }
     
     .block-container {
-        padding: 0.6rem 1rem 0rem 1rem !important;
+        padding: 0.5rem 0.8rem 0rem 0.8rem !important;
         max-width: 100% !important;
     }
-    .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
-    .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
     /* -------------------------------------------------------------------------- */
-    /* 2. ĐỒNG BỘ MÀU SẮC SÁNG/TỐI TỰ ĐỘNG                                       */
+    /* 2. ĐỒNG BỘ MÀU SẮC THEME HỆ THỐNG                                         */
     /* -------------------------------------------------------------------------- */
     label, p, span, summary, div {
         color: var(--text-color) !important;
     }
     
-    /* Thiết kế Form bộ lọc đồng bộ màu theo Theme hệ thống */
     .stExpander {
         background-color: var(--background-color) !important;
         border: 1px solid var(--border-color) !important;
@@ -85,7 +82,6 @@ st.markdown(
         font-weight: 700 !important;
     }
 
-    /* Các ô nhập liệu tự thích ứng nền Sáng/Tối */
     .stExpander input {
         background-color: var(--secondary-background-color) !important;
         color: var(--text-color) !important;
@@ -94,7 +90,6 @@ st.markdown(
         border-radius: 8px !important;
     }
 
-    /* Nút bấm Tìm kiếm */
     div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
         background-color: #3B82F6 !important; 
         color: #FFFFFF !important;
@@ -102,57 +97,85 @@ st.markdown(
         font-weight: 700 !important;
         border-radius: 8px !important;
         border: none !important;
-        transition: all 0.2s ease;
-    }
-    div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"]:hover {
-        background-color: #2563EB !important;
-        box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
     /* -------------------------------------------------------------------------- */
-    /* 3. ĐIỀU CHỈNH LAYOUT LƠ LỬNG KHÔNG BỊ PHỤ THUỘC VÀO EXPANDER TRÊN MOBILE  */
+    /* 3. THIẾT KẾ ĐÈ LAYOUT (OVERLAY) - FIX LỖI CO CỘT TÌM KIẾM TRÊN DI ĐỘNG      */
     /* -------------------------------------------------------------------------- */
-    /* Khóa cứng chiều cao tổng thể của hàng bằng chiều cao bản đồ (730px) */
+    
+    /* Giao diện trên Máy tính (PC) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
         position: relative !important;
         display: block !important;
-        height: 730px !important; 
+        height: 740px !important; 
     }
-
-    /* Ép Cột 2 (Bản đồ) làm lớp nền dưới cùng, trải rộng 100% không gian */
-    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
+    /* Bản đồ nằm nền dưới */
+    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) > div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        z-index: 1 !important;
-        padding: 0px !important;
+        top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important;
+        z-index: 1 !important; padding: 0px !important;
     }
-
-    /* Ép Cột 1 (Bộ lọc tìm kiếm) nổi hẳn lên trên bên góc trái bản đồ */
-    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
+    /* Khung tìm kiếm đè lên góc trái */
+    div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) > div[data-testid="column"]:nth-of-type(1) {
         position: absolute !important;
-        top: 15px !important; 
-        left: 15px !important;
-        width: 320px !important; 
-        z-index: 9999 !important; 
-        background: transparent !important;
-        padding: 0px !important;
+        top: 15px !important; left: 15px !important; width: 330px !important;
+        z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
+    .stFoliumStatic, .stFoliumStatic > iframe { width: 100% !important; height: 100% !important; border-radius: 12px !important; }
 
-    /* Tối ưu riêng khi co nhỏ trên màn hình Mobile cực nhỏ */
+    /* SỬA LỖI GIAO DIỆN TRÊN MOBILE (MÀN HÌNH < 768PX) */
     @media (max-width: 768px) {
-        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-            top: 10px !important;
-            left: 10px !important;
-            width: 290px !important; 
-            max-width: 85% !important;
+        /* Ép khung chứa chính cố định cao độ theo màn hình điện thoại, chống trượt dòng */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) {
+            display: block !important;
+            position: relative !important;
+            height: 80vh !important;
+            min-height: 520px !important;
+            overflow: hidden !important;
         }
+
+        /* FIX KHÓA CỨNG: Ép cột 2 (Bản đồ) bung rộng toàn vẹn, không bị ép hẹp ngang */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) > div[data-testid="column"]:nth-of-type(2) {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            height: 100% !important;
+            z-index: 1 !important;
+            padding: 0px !important;
+        }
+
+        /* FIX KHÓA CỨNG: Ép cột 1 (Cột tìm kiếm) giữ nguyên hình dạng khối chữ nhật nằm lơ lửng */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) > div[data-testid="column"]:nth-of-type(1) {
+            position: absolute !important;
+            top: 12px !important;
+            left: 12px !important;
+            
+            /* Đảm bảo chiều ngang hộp tìm kiếm vừa vặn tay cầm, không bị biến dạng cột dọc */
+            width: 300px !important;
+            min-width: 300px !important;
+            max-width: 88% !important;
+            
+            z-index: 9999 !important;
+            padding: 0px !important;
+            
+            /* Tạo cuộn nội bộ nếu danh sách lưu quá dài */
+            max-height: 80% !important;
+            overflow-y: auto !important;
+        }
+
+        .stFoliumStatic, .stFoliumStatic > iframe {
+            height: 100% !important;
+            min-height: 520px !important;
+        }
+
         .stExpander {
             border-radius: 14px !important;
-            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3) !important;
-            backdrop-filter: blur(8px) !important;
+            box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            background-color: rgba(var(--background-color-rgb), 0.95) !important;
         }
     }
     </style>
@@ -204,27 +227,20 @@ if not st.session_state.logged_in:
         .stApp, .stMarkdown, p, span, div, label { color: #FFFFFF !important; }
         input { color: #0F172A !important; background-color: #FFFFFF !important; -webkit-text-fill-color: #0F172A !important;}
         
-        /* -------------------------------------------------------------------------- */
-        /* FIX: ÉP FORM ĐĂNG NHẬP NẰM NGANG CHUẨN XÁC TRÊN MOBILE                     */
-        /* -------------------------------------------------------------------------- */
         @media (max-width: 768px) {
-            div[data-testid="stHorizontalBlock"] {
+            .stApp div[data-testid="stHorizontalBlock"] {
                 display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
+                width: 100% !important;
+                gap: 8px !important;
             }
-            /* Ẩn hoàn toàn cột khoảng trống bên trái (cột 7.0) */
-            div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
-                display: none !important;
+            .stApp div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-of-type(1) {
+                display: none !important; width: 0px !important;
             }
-            /* Ép 2 ô Tài khoản và Mật khẩu chia đôi giao diện 50-50 ngang nhau */
-            div[data-testid="stHorizontalBlock"] > div:nth-child(2),
-            div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
-                width: 50% !important;
-                min-width: 50% !important;
-                max-width: 50% !important;
-                flex: 1 1 50% !important;
-                padding: 0 5px !important;
+            .stApp div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-of-type(2),
+            .stApp div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-of-type(3) {
+                display: block !important; width: 50% !important; min-width: 50% !important; max-width: 50% !important; flex: 1 1 50% !important; padding: 0px !important;
             }
         }
         </style>
@@ -298,8 +314,8 @@ else:
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
         st.markdown(
-            "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
-            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
+            "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:20px; text-shadow: none;'>"
+            "🛰️ TRUNG TÂM ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
             "</h2>", 
             unsafe_allow_html=True
         )
