@@ -327,4 +327,122 @@ else:
                 else:
                     st.error("❌ Điền đủ 4 thông số!")
 
-            if st.session_
+            if st.session_state.tram_hien_tai is not None:
+                cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
+                if st.button("📌 Lưu trạm phát sóng", type="primary", use_container_width=True):
+                    da_ton_tai = any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu)
+                    if not da_ton_tai:
+                        st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
+                        st.toast(f"Đã lưu trạm {cell_id_hien_tai}")
+                    else:
+                        st.toast("Trạm này đã lưu trước đó.")
+            
+            so_luong_diem = len(st.session_state.danh_sach_luu)
+            
+            if so_luong_diem >= 2:
+                with st.expander("📏 Phân tích trắc địa tuyến", expanded=False):
+                    tong_khoang_cach = 0.0
+                    for i in range(so_luong_diem - 1):
+                        p1 = st.session_state.danh_sach_luu[i]
+                        p2 = st.session_state.danh_sach_luu[i+1]
+                        kc = tinh_khoang_cach_haversine(p1[COT_VI_DO], p1[COT_KINH_DO], p2[COT_VI_DO], p2[COT_KINH_DO])
+                        tong_khoang_cach += kc
+                    st.info(f"Tổng tuyến: **{tong_khoang_cach:.2f} km**")
+
+            if so_luong_diem > 0:
+                with st.expander(f"📍 Trạm đã lưu vào máy ({so_luong_diem})", expanded=False):
+                    index_can_xoa = None
+                    for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
+                        col_cell_name, col_del_btn = st.columns([6, 4])
+                        with col_cell_name:
+                            st.markdown(f"<div style='font-size:12px; padding-top:5px;'>ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
+                        with col_del_btn:
+                            if st.button("Xóa", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
+                                index_can_xoa = idx
+                    
+                    if index_can_xoa is not None:
+                        st.session_state.danh_sach_luu.pop(index_can_xoa)
+                        st.rerun()
+
+                    if st.button("🗑️ Xóa sạch danh sách", type="secondary", use_container_width=True):
+                        st.session_state.danh_sach_luu = []
+                        st.session_state.tram_hien_tai = None
+                        st.rerun()
+
+        # Cân đối tọa độ điểm nhìn
+        if st.session_state.tram_hien_tai is not None:
+            vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
+            kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
+            muc_zoom = 16
+        elif so_luong_diem > 0:
+            vi_do_xem = float(st.session_state.danh_sach_luu[-1][COT_VI_DO])
+            kinh_do_xem = float(st.session_state.danh_sach_luu[-1][COT_KINH_DO])
+            muc_zoom = 14
+
+        m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
+        
+        folium.TileLayer(
+            tiles='https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+            attr='Google Satellite', name='Bản đồ Vệ tinh', overlay=False, control=True
+        ).add_to(m)
+        
+        folium.TileLayer(
+            tiles='https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+            attr='Google Maps Street', name='Bản đồ Đường phố', overlay=False, control=True
+        ).add_to(m)
+        
+        folium.LayerControl().add_to(m)
+
+        toa_do_vung = []
+
+        for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
+            lat_l = float(tram_luu[COT_VI_DO])
+            lon_l = float(tram_luu[COT_KINH_DO])
+            toa_do_vung.append([lat_l, lon_l])
+            
+            cgi_l = truy_xuat_du_lieu_cot(tram_luu, ['CGI', 'cgi'])
+            addr_l = truy_xuat_du_lieu_cot(tram_luu, ['Địa chỉ', 'dia chi', 'Address'])
+            cell_l = tram_luu[COT_CELL_ID]
+
+            # Thêm Vĩ độ & Kinh độ vào 1 dòng trong Popup Trạm lưu
+            noi_dung_luu = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
+                <b>📌 TRẠM LƯU [{index+1}]</b><br>
+                <b>ID:</b> {cell_l}<br>
+                <b>CGI:</b> {cgi_l}<br>
+                <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
+                <b>Địa chỉ:</b> {addr_l}
+            </div>
+            """
+            folium.Marker([lat_l, lon_l], popup=folium.Popup(noi_dung_luu, max_width=240), icon=folium.Icon(color='blue', icon='bookmark')).add_to(m)
+
+        if len(toa_do_vung) == 2:
+            folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
+        elif len(toa_do_vung) >= 3:
+            folium.Polygon(locations=toa_do_vung, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
+
+        if st.session_state.tram_hien_tai is not None:
+            cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
+            dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
+            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
+            lat_val = st.session_state.tram_hien_tai[COT_VI_DO]
+            lon_val = st.session_state.tram_hien_tai[COT_KINH_DO]
+
+            # Cập nhật Popup: Cell ID lên tiêu đề, Vĩ độ và Kinh độ đưa vào 1 dòng chung
+            noi_dung_label = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
+                <b style='color: #D9534F;'>🎯 KẾT QUẢ TÌM KIẾM: {cell_val}</b><br>
+                <b>CGI:</b> {cgi_val}<br>
+                <b>Tọa độ:</b> {lat_val}, {lon_val}<br>
+                <b>Địa chỉ:</b> {dia_chi_val}
+            </div>
+            """
+            folium.Marker([vi_do_xem, kinh_do_xem], popup=folium.Popup(noi_dung_label, max_width=240, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
+
+        with col_right_map:
+            # Chiều cao 730px tối ưu hiển thị bản đồ rộng và đẹp mắt
+            folium_static(m, height=730, width=None)
+
+    except Exception as e:
+        with col_right_map:
+            st.error(f"❌ Khởi tạo thất bại: {e}")
