@@ -261,7 +261,7 @@ if not st.session_state.logged_in:
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.1);'>
             <h2 style='color: #ffffff; margin-bottom: 12px; font-weight: 700; letter-spacing: 1px;'>🔒 HỆ THỐNG YÊU CẦU ĐĂNG NHẬP</h2>
-            <p style='font-size: 15px; opacity: 0.85; margin: 0; font-family: sans-serif; color: #FFFFFF !important;'>Vui lòng nhập thông tin định danh tại góc phải màn hình để truy cập cơ sở dữ liệu hạ tầng.</p>
+            <p style='font-size: 15px; opacity: 0.85; margin: 0; font-family: sans-serif; color: #FFFFFF !important;'>Vui lòng nhập thông tin tài khoản tại góc phải màn hình để truy cập cơ sở dữ liệu hạ tầng.</p>
         </div>
         """, 
         unsafe_allow_html=True
