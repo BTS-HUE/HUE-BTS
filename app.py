@@ -199,7 +199,7 @@ else:
                     f1 = st.text_input("Mã Quốc gia (MCC):", key="mcc_in").strip()
                     f2 = st.text_input("Mã Mạng (MNC):", key="mnc_in").strip()
                     f3 = st.text_input("Mã Vùng (LAC/TAC):", key="lac_in").strip()
-                    f4 = st.text_input("Định danh Cell (Cell ID):", key="cell_in").strip()
+                    f4 = st.text_input("Cell ID:", key="cell_in").strip()
                     
                     if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
                     nut_tim_kiem = st.form_submit_button("🔍 Tìm Kiếm", use_container_width=True)
