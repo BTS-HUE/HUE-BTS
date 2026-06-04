@@ -314,7 +314,8 @@ else:
                     if f2.isdigit() and len(f2) == 1:
                         f2 = f2.zfill(2)
                     
-                    nut_tim_kiem = st.form_submit_button("🔍 Lọc & Định vị", use_container_width=True)
+                    # ĐỔI TÊN NÚT BẤM THÀNH TÌM KIẾM
+                    nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm", use_container_width=True)
             
             st.markdown(
                 """
@@ -340,7 +341,7 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"🎯 Tìm thấy ID: {f4}")
-                        st.rerun()
+                        # ĐÃ BỎ st.rerun() ĐỂ BẢN ĐỒ TỰ ĐỘNG CẬP NHẬT TÂM NGAY LẬP TỨC
                     else:
                         st.session_state.tram_hien_tai = None
                         st.warning("⚠️ Không có dữ liệu!")
@@ -389,6 +390,7 @@ else:
                         st.session_state.tram_hien_tai = None
                         st.rerun()
 
+        # ĐOẠN ĐIỀU CHỈNH TÂM (NHẢY TỚI ĐIỂM GHIM): SẼ ĐƯỢC THỰC THI NGAY LÚC CLICK TÌM KIẾM
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
