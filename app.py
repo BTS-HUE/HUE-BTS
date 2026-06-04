@@ -46,7 +46,7 @@ if "tram_hien_tai" not in st.session_state:
     st.session_state.tram_hien_tai = None
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH - SỬA LỖI ÉP KHUNG TUYỆT ĐỐI KHÔNG BỊ ĐẨY BẢN ĐỒ
+# 2. CSS ĐÁP ỨNG THÔNG MINH - ĐÃ THU NHỎ KHUNG TÌM KIẾM TRÊN MOBILE (MOBI)
 # ==============================================================================
 st.markdown(
     """
@@ -130,28 +130,45 @@ st.markdown(
         padding: 0px !important;
     }
 
-    /* Ép Cột 1 (Bộ lọc tìm kiếm) nổi hẳn lên trên bên góc trái bản đồ */
+    /* Ép Cột 1 (Bộ lọc tìm kiếm) nổi hẳn lên trên bên góc trái bản đồ (Desktop) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
         position: absolute !important;
         top: 15px !important; 
         left: 15px !important;
-        width: 320px !important; /* Độ rộng hộp tìm kiếm cố định lý tưởng */
-        z-index: 9999 !important; /* Đảm bảo luôn nằm đè lên trên bản đồ */
+        width: 320px !important; 
+        z-index: 9999 !important; 
         background: transparent !important;
         padding: 0px !important;
     }
 
-    /* Tối ưu riêng khi co nhỏ trên màn hình Mobile cực nhỏ */
+    /* TỐI ƯU THU NHỎ KHUNG TRÊN MOBILE (MOBI) */
     @media (max-width: 768px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             top: 10px !important;
             left: 10px !important;
-            width: 290px !important; /* Thu gọn vừa vặn chiều dọc điện thoại */
+            width: 230px !important; /* Hạ từ 290px xuống 230px gọn gàng siêu nhỏ */
             max-width: 85% !important;
         }
+        
+        /* Thu nhỏ font chữ tiêu đề và ô nhập để không bị vỡ bố cục */
+        .stExpander summary p {
+            font-size: 13px !important;
+        }
+        .stExpander label p {
+            font-size: 11px !important;
+        }
+        .stExpander input {
+            font-size: 12px !important;
+            padding: 4px 8px !important;
+        }
+        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
+            font-size: 13px !important;
+            padding: 4px !important;
+        }
+        
         .stExpander {
-            border-radius: 14px !important;
-            box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.3) !important;
+            border-radius: 10px !important;
+            box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important;
             backdrop-filter: blur(8px) !important;
         }
     }
@@ -314,7 +331,6 @@ else:
                     if f2.isdigit() and len(f2) == 1:
                         f2 = f2.zfill(2)
                     
-                    # ĐỔI TÊN NÚT BẤM THÀNH TÌM KIẾM
                     nut_tim_kiem = st.form_submit_button("🔍 Tìm kiếm", use_container_width=True)
             
             st.markdown(
@@ -341,7 +357,6 @@ else:
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.success(f"🎯 Tìm thấy ID: {f4}")
-                        # ĐÃ BỎ st.rerun() ĐỂ BẢN ĐỒ TỰ ĐỘNG CẬP NHẬT TÂM NGAY LẬP TỨC
                     else:
                         st.session_state.tram_hien_tai = None
                         st.warning("⚠️ Không có dữ liệu!")
@@ -390,7 +405,6 @@ else:
                         st.session_state.tram_hien_tai = None
                         st.rerun()
 
-        # ĐOẠN ĐIỀU CHỈNH TÂM (NHẢY TỚI ĐIỂM GHIM): SẼ ĐƯỢC THỰC THI NGAY LÚC CLICK TÌM KIẾM
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem = float(st.session_state.tram_hien_tai[COT_VI_DO])
             kinh_do_xem = float(st.session_state.tram_hien_tai[COT_KINH_DO])
