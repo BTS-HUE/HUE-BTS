@@ -8,7 +8,7 @@ import math
 # 1. CẤU HÌNH HỆ THỐNG & QUẢN LÝ PHIÊN TRUY CẬP
 # ==============================================================================
 st.set_page_config(
-    page_title="Hệ Thống Giám Sát & Định Vị Hạ Tầng BTS", 
+    page_title="Hệ Thống Giám Sát & Định Vị TRẠM BTS", 
     layout="wide", 
     initial_sidebar_state="collapsed"
 )
@@ -170,7 +170,7 @@ else:
     with col_main_title:
         st.markdown(
             "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
-            "🛰️ TRUNG TÂM ĐIỀU HÀNH VÀ GIÁM SÁT HẠ TẦNG VIỄN THÔNG"
+            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM BTS"
             "</h2>", 
             unsafe_allow_html=True
         )
@@ -194,7 +194,7 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            with st.expander("🔍 Tra cứu hạ tầng", expanded=True):
+            with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
                     f1 = st.text_input("Mã Quốc gia (MCC):", key="mcc_in").strip()
                     f2 = st.text_input("Mã Mạng (MNC):", key="mnc_in").strip()
@@ -202,7 +202,7 @@ else:
                     f4 = st.text_input("Định danh Cell (Cell ID):", key="cell_in").strip()
                     
                     if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
-                    nut_tim_kiem = st.form_submit_button("🔍 Truy vấn", use_container_width=True)
+                    nut_tim_kiem = st.form_submit_button("🔍 Tìm Kiếm", use_container_width=True)
             
             st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
 
