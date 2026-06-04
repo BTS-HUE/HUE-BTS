@@ -216,7 +216,7 @@ else:
                         st.success(f"🎯 Đã phát hiện ID: {f4}")
                     else:
                         st.session_state.tram_hien_tai = None
-                        st.warning("⚠️ Bản ghi không tồn tại!")
+                        st.warning("⚠️ Không tìm thấy trạm!")
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ tham số!")
 
