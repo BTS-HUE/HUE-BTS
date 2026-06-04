@@ -285,7 +285,7 @@ else:
     with col_main_title:
         st.markdown(
             "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
-            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
+            "🛰️ TRUNG TÂM ĐỊNH VỊ TRẠM PHÁT SÓNG BTS"
             "</h2>", 
             unsafe_allow_html=True
         )
