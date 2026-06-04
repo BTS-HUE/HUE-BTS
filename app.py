@@ -175,7 +175,7 @@ else:
             unsafe_allow_html=True
         )
     with col_logout_layout:
-        if st.button("🚪 Thoát phiên", use_container_width=True, type="secondary"):
+        if st.button("🚪 ĐĂNG XUẤT", use_container_width=True, type="secondary"):
             st.query_params.clear()
             st.session_state.logged_in = False
             st.session_state.danh_sach_luu.clear()
