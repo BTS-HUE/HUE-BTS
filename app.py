@@ -13,17 +13,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Hệ thống tự động kiểm tra cấu hình bảo mật từ Secrets hoặc mặc định
-if "auth" in st.secrets:
-    TOKEN_XAC_THUC = st.secrets["auth"]["token_xac_thuc"]
-    TAI_KHOAN_CHUAN = st.secrets["auth"]["tai_khoan_chuan"]
-    MAT_KHAU_CHUAN = st.secrets["auth"]["mat_khau_chuan"]
-    SHEET_ID = st.secrets["database"]["sheet_id"]
-else:
-    TOKEN_XAC_THUC = "authenticated_secure_token_tuan"
-    TAI_KHOAN_CHUAN = "admin"
-    MAT_KHAU_CHUAN = "tuan"
-    SHEET_ID = "101T9xJHnW9EUdz1Il6FXWTWt272oSFvkAIWwSijLRYI"
+# Đọc trực tiếp từ cấu hình bảo mật Secrets (Đã xóa bỏ hoàn toàn phần mật khẩu mặc định)
+TOKEN_XAC_THUC = st.secrets["auth"]["token_xac_thuc"]
+TAI_KHOAN_CHUAN = st.secrets["auth"]["tai_khoan_chuan"]
+MAT_KHAU_CHUAN = st.secrets["auth"]["mat_khau_chuan"]
+SHEET_ID = st.secrets["database"]["sheet_id"]
 
 # Biến cờ để kiểm tra xem có cần xóa tham số URL hay không
 can_xoa_url = False
@@ -146,11 +140,10 @@ st.markdown(
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             top: 10px !important;
             left: 10px !important;
-            width: 230px !important; /* Hạ từ 290px xuống 230px gọn gàng siêu nhỏ */
+            width: 230px !important; 
             max-width: 85% !important;
         }
         
-        /* Thu nhỏ font chữ tiêu đề và ô nhập để không bị vỡ bố cục */
         .stExpander summary p {
             font-size: 13px !important;
         }
