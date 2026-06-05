@@ -5,7 +5,7 @@ from streamlit_folium import folium_static
 import math
 
 # ==============================================================================
-# 1. CẤU HÌNH HỆ THỐNG & QUẢN LÝ PHIÊN TRUY CẬP
+# 1. KIẾN TRÚC NỀN TẢNG & QUẢN LÝ PHÂN HỆ PHIÊN TRUY CẬP (SESSION MANAGEMENT)
 # ==============================================================================
 st.set_page_config(
     page_title="Hệ Thống Giám Sát & Định Vị TRẠM BTS", 
@@ -13,13 +13,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Đọc cấu hình bảo mật
+# Khởi tạo thông tin cấu hình từ hệ thống quản trị bảo mật (Secrets Manager)
 TOKEN_XAC_THUC = st.secrets["auth"]["token_xac_thuc"]
 TAI_KHOAN_CHUAN = st.secrets["auth"]["tai_khoan_chuan"]
 MAT_KHAU_CHUAN = st.secrets["auth"]["mat_khau_chuan"]
 SHEET_ID = st.secrets["database"]["sheet_id"]
 
-# Khởi tạo & Đồng bộ trạng thái phiên làm việc
+# Kiểm tra cơ chế định danh tự động qua URL Token và đồng bộ trạng thái phân hệ
 if "logged_in" not in st.session_state:
     if st.query_params.get("auth_token") == TOKEN_XAC_THUC:
         st.session_state.logged_in = True
@@ -32,12 +32,12 @@ st.session_state.setdefault("tram_hien_tai", None)
 st.session_state.setdefault("ds_gan_nhat", [])
 
 # ==============================================================================
-# 2. CSS ĐÁP ỨNG THÔNG MINH (UI/UX)
+# 2. KHỞI TẠO LỚP ĐỊNH DẠNG GIAO DIỆN ĐÁP ỨNG NÂNG CAO (UI/UX STYLE Overrides)
 # ==============================================================================
 st.markdown(
     """
     <style>
-    /* 1. Ẩn thành phần thừa của Streamlit */
+    /* 2.1. TỐI ƯU KHÔNG GIAN: Loại bỏ các thành phần giao diện mặc định của nền tảng */
     [data-testid="stSidebarNav"], [data-testid="stSidebar"], section[data-testid="stSidebar"], 
     header, footer, #MainMenu, iframe[title="Manage app"], .stAppDeployButton, div[data-testid="stAppDeployButton"], footer + div {
         display: none !important; visibility: hidden !important; width: 0px !important; height: 0px !important;
@@ -46,7 +46,7 @@ st.markdown(
     .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
-    /* 2. Đồng bộ màu sắc Sáng/Tối */
+    /* 2.2. ĐỒNG BỘ PALETTE MÀU: Đảm bảo tương thích hiển thị đồng nhất giữa Light/Dark Mode */
     label, p, span, summary, div { color: var(--text-color) !important; }
     .stExpander {
         background-color: var(--background-color) !important;
@@ -70,7 +70,7 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 3. Layout lơ lửng cho Bản đồ & Bộ lọc */
+    /* 2.3. CẤU TRÚC LỚP LƠ LỬNG (FLOATING PANEL): Định hình khung điều hướng không gian GIS Map */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
@@ -79,7 +79,7 @@ st.markdown(
         position: absolute !important; top: 15px !important; left: 15px !important; width: 320px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* Tối ưu Mobile */
+    /* 2.4. ĐÁP ỨNG THIẾT BỊ DI ĐỘNG (MOBILE RESPONSIVE): Tối ưu hóa tỷ lệ và kích thước điều khiển */
     @media (max-width: 768px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
             top: 10px !important; left: 10px !important; width: 230px !important; max-width: 85% !important;
@@ -96,15 +96,16 @@ st.markdown(
 )
 
 # ==============================================================================
-# 3. THUẬT TOÁN & TRUY XUẤT DỮ LIỆU
+# 3. PHÂN HỆ THUẬT TOÁN KHÔNG GIAN VÀ XỬ LÝ CƠ SỞ DỮ LIỆU (CORE GEOGRAPHIC ENGINE)
 # ==============================================================================
 def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
+    """Tính khoảng cách cung lớn giữa 2 tọa độ địa lý dựa trên mô hình hình cầu (Đơn vị: km)"""
     r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
-    return 2 * math.asin(math.sqrt(a)) * 6371.0 # Bán kính trái đất (km)
+    return 2 * math.asin(math.sqrt(a)) * 6371.0 
 
 def sap_xep_toa_do_da_giac(toa_do):
-    """Sắp xếp các điểm ghim theo góc cực xung quanh tâm để chống đan chéo hình"""
+    """Sắp xếp chuỗi điểm nút theo góc cực quanh tâm hình học nhằm ngăn chặn lỗi đan chéo đồ họa"""
     if len(toa_do) < 3:
         return toa_do
     trung_binh_lat = sum(p[0] for p in toa_do) / len(toa_do)
@@ -112,12 +113,12 @@ def sap_xep_toa_do_da_giac(toa_do):
     return sorted(toa_do, key=lambda p: math.atan2(p[0] - trung_binh_lat, p[1] - trung_binh_lon))
 
 def tinh_dien_tich_da_giac(toa_do):
-    """Tính diện tích của đa giác trên mặt cầu sau khi đã được sắp xếp chu chuẩn (km2)"""
+    """Xác định diện tích bề mặt không gian bao phủ của tập hợp đỉnh trên mặt cầu phẳng (Đơn vị: km²)"""
     if len(toa_do) < 3:
         return 0.0
     toa_do_chuan = sap_xep_toa_do_da_giac(toa_do)
     area = 0.0
-    R = 6371.0 # Bán kính trái đất (km)
+    R = 6371.0 
     for i in range(len(toa_do_chuan)):
         lat1, lon1 = map(math.radians, toa_do_chuan[i])
         lat2, lon2 = map(math.radians, toa_do_chuan[(i + 1) % len(toa_do_chuan)])
@@ -126,6 +127,7 @@ def tinh_dien_tich_da_giac(toa_do):
 
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
+    """Đọc, chuẩn hóa định dạng phân đoạn dữ liệu và ghi bộ nhớ đệm luồng thông tin từ Cloud Sheet"""
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
     data = pd.read_csv(URL, dtype=str)
     data.columns = data.columns.str.strip()
@@ -137,6 +139,7 @@ def tai_co_so_du_lieu():
     return data
 
 def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
+    """Ánh xạ linh hoạt từ dữ liệu dòng để truy xuất thuộc tính không phụ thuộc chữ hoa/thường"""
     tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
     for k in row.index:
         if str(k).lower() in tap_ten_goi:
@@ -144,7 +147,7 @@ def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
     return "Không có dữ liệu"
 
 # ==============================================================================
-# 4. PHÂN HỆ XÁC THỰC TRUY CẬP (LOGIN)
+# 4. PHÂN HỆ XÁC THỰC AN NINH & KIỂM SOÁT CỔNG TRUY CẬP (SECURITY GATEWAY)
 # ==============================================================================
 if not st.session_state.logged_in:
     st.markdown(
@@ -182,7 +185,7 @@ if not st.session_state.logged_in:
     )
 
 # ==============================================================================
-# 5. TRUNG TÂM ĐIỀU HÀNH & GIÁM SÁT BẢN ĐỒ
+# 5. KHÔNG GIAN ĐIỀU HÀNH TRỰC QUAN & HỆ THỐNG THÔNG TIN ĐỊA LÝ (GIS MASTER MODULE)
 # ==============================================================================
 else:
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
@@ -231,7 +234,7 @@ else:
                     
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
-                        st.session_state.ds_gan_nhat = [] # Reset danh sách cũ khi có truy vấn mới
+                        st.session_state.ds_gan_nhat = [] 
                         st.success(f"🎯 Đã phát hiện ID: {f4}")
                     else:
                         st.session_state.tram_hien_tai = None
@@ -240,7 +243,7 @@ else:
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ tham số!")
 
-            # XỬ LÝ KHI CÓ TRẠM ĐANG TRA CỨU
+            # 5.1. XỬ LÝ QUY TRÌNH NGHIỆP VỤ KHI CÓ TRẠM ĐANG CHỌN TRUY VẤN
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
@@ -253,7 +256,6 @@ else:
                     else:
                         st.toast("Cảnh báo: Trạm này đã được ghim trước đó.")
                 
-                # SỬA LẠI LOGIC: Nhấn nút này hệ thống mới tính toán dữ liệu gần nhất
                 if st.button("📡 Tìm các trạm gần nhất", type="secondary", use_container_width=True):
                     lat_curr = float(st.session_state.tram_hien_tai[COT_VI_DO])
                     lon_curr = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -270,7 +272,7 @@ else:
                         st.session_state.ds_gan_nhat = []
                         st.toast("⚠️ Không tìm thấy trạm nào khác trong CSDL.")
             
-            # SỬA LẠI GIAO DIỆN: Chỉ xuất hiện và bung ra (expanded=True) KHI danh sách có dữ liệu
+            # 5.2. TRỰC QUAN HÓA KẾT QUẢ PHÂN TÍCH KHÔNG GIAN
             if st.session_state.tram_hien_tai is not None and st.session_state.ds_gan_nhat:
                 with st.expander("📡 TRẠM BTS GẦN NHẤT", expanded=True):
                     for idx, tram_near in enumerate(st.session_state.ds_gan_nhat):
@@ -295,6 +297,7 @@ else:
 
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
+            # 5.3. TÍNH TOÁN CÁC CHỈ SỐ HÌNH HỌC HẠ TẦNG
             if so_luong_diem >= 2:
                 with st.expander("📏 KHOẢNG CÁCH", expanded=False):
                     tong_khoang_cach = sum(
@@ -310,6 +313,7 @@ else:
                         dien_tich = tinh_dien_tich_da_giac(toa_do_cac_diem)
                         st.success(f"Diện tích vùng bao phủ: **{dien_tich:.2f} km²**")
 
+            # 5.4. ĐIỀU KHIỂN DANH SÁCH TOẠ ĐỘ GHIM LƯU TRỮ
             if so_luong_diem > 0:
                 with st.expander(f"📍 Dữ liệu điểm ghim ({so_luong_diem}/10)", expanded=False):
                     index_can_xoa = None
@@ -331,6 +335,7 @@ else:
                         st.session_state.ds_gan_nhat.clear()
                         st.rerun()
 
+        # 5.5. KHỞI TẠO VÀ PHÂN LỚP ĐỒ HỌA BẢN ĐỒ LỚN (MAP CANVAS LAYERS)
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 14
         elif so_luong_diem > 0:
@@ -344,6 +349,7 @@ else:
 
         toa_do_vung = []
 
+        # 5.6. VẼ CÁC THỰC THỂ LƯU TRỮ LÊN PHÂN LỚP ĐỊA LÝ (MARKERS DRAWER)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -353,8 +359,8 @@ else:
             cell_l = tram_luu[COT_CELL_ID]
 
             noi_dung_luu = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
-                <b>📌 ĐIỂM GHIM [{index+1}]</b><br>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                <b style='color: #0275d8;'>📌 THÔNG TIN TRẠM ĐÃ GHIM [{index+1}]</b><br>
                 <b>Cell ID:</b> {cell_l}<br>
                 <b>CGI:</b> {cgi_l}<br>
                 <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
@@ -369,6 +375,7 @@ else:
             toa_do_vung_toi_uu = sap_xep_toa_do_da_giac(toa_do_vung)
             folium.Polygon(locations=toa_do_vung_toi_uu, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
 
+        # 5.7. THIẾT LẬP ĐỒ HỌA MỤC TIÊU TRA CỨU VÀ ĐỒ THỊ LIÊN KẾT LIÊN TRẠM
         if st.session_state.tram_hien_tai is not None:
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
@@ -376,8 +383,8 @@ else:
             lat_val, lon_val = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO])
 
             noi_dung_label = f"""
-            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
-                <b style='color: #D9534F;'>🎯 THÔNG TIN TRẠM: {cell_val}</b><br>
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                <b style='color: #D9534F;'>🎯 CHI TIẾT TRẠM TRA CỨU: {cell_val}</b><br>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Tọa độ:</b> {lat_val}, {lon_val}<br>
                 <b>Địa chỉ:</b> {dia_chi_val}
@@ -393,15 +400,19 @@ else:
                 addr_n = truy_xuat_du_lieu_cot(pd.Series(tram_near), ['Địa chỉ', 'dia chi', 'Address'])
                 
                 noi_dung_near = f"""
-                <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
-                    <b style='color: green;'>📡 TRẠM BTS GẦN NHẤT</b><br>
+                <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                    <b style='color: #28a745;'>📡 THÔNG TIN TRẠM LÂN CẬN</b><br>
                     <b>Cell ID:</b> {cell_n}<br>
                     <b>Khoảng cách:</b> {kc_n:.2f} km<br>
                     <b>CGI:</b> {cgi_n}<br>
                     <b>Địa chỉ:</b> {addr_n}
                 </div>
                 """
-                folium.Marker([lat_n, lon_n], popup=folium.Popup(noi_dung_near, max_width=240), icon=folium.Icon(color='green', icon='signal')).add_to(m)
+                folium.Marker(
+                    [lat_n, lon_n], 
+                    popup=folium.Popup(noi_dung_near, max_width=240), 
+                    icon=folium.Icon(color='green', icon='broadcast-tower', prefix='fa')
+                ).add_to(m)
                 folium.PolyLine(locations=[[lat_val, lon_val], [lat_n, lon_n]], color="green", weight=1.5, opacity=0.6, dash_array='5, 5').add_to(m)
 
         with col_right_map:
