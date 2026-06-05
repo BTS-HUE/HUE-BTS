@@ -231,7 +231,7 @@ else:
                     
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
-                        st.session_state.ds_gan_nhat = [] # Reset trạm lân cận khi tìm trạm mới
+                        st.session_state.ds_gan_nhat = [] 
                         st.success(f"🎯 Đã phát hiện ID: {f4}")
                     else:
                         st.session_state.tram_hien_tai = None
@@ -244,7 +244,6 @@ else:
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
-                # 1. NÚT GẮN THẺ TỌA ĐỘ TRẠM HIỆN TẠI (GIỚI HẠN TỐI ĐA 10 ĐIỂM)
                 if st.button("📌 Gắn thẻ tọa độ trạm này", type="primary", use_container_width=True):
                     if len(st.session_state.danh_sach_luu) >= 10:
                         st.toast("❌ Đã đạt giới hạn tối đa 10 điểm ghim!")
@@ -254,7 +253,6 @@ else:
                     else:
                         st.toast("Cảnh báo: Trạm này đã được ghim trước đó.")
                 
-                # 2. NÚT BẤM TÌM TRẠM GẦN NHẤT NHƯ YÊU CẦU
                 if st.button("📡 Tìm các trạm gần nhất", type="secondary", use_container_width=True):
                     lat_curr = float(st.session_state.tram_hien_tai[COT_VI_DO])
                     lon_curr = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -271,9 +269,9 @@ else:
                         st.session_state.ds_gan_nhat = []
                         st.toast("⚠️ Không tìm thấy trạm nào khác trong CSDL.")
             
-            # GIAO DIỆN HIỂN THỊ DANH SÁCH TRẠM GẦN NHẤT + CHO PHÉP GHIM ĐẾN TỐI ĐA 10 ĐIỂM
+            # ĐÃ THAY ĐỔI: Đổi tên expander hiển thị danh sách trạm lân cận
             if st.session_state.tram_hien_tai is not None and st.session_state.ds_gan_nhat:
-                with st.expander("📡 5 TRẠM LÂN CẬN GẦN NHẤT", expanded=True):
+                with st.expander("📡 TRẠM BTS GẦN NHẤT", expanded=True):
                     for idx, tram_near in enumerate(st.session_state.ds_gan_nhat):
                         kc_gan = float(tram_near['KhoangCach'])
                         addr_near = truy_xuat_du_lieu_cot(pd.Series(tram_near), ['Địa chỉ', 'dia chi', 'Address'])
@@ -296,9 +294,8 @@ else:
 
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
-            # HIỂN THỊ THÔNG TIN ĐO ĐẠC TUYẾN/VÙNG
             if so_luong_diem >= 2:
-                with st.expander("📏 khoảng cách", expanded=False):
+                with st.expander("📏 KHOẢNG CÁCH", expanded=False):
                     tong_khoang_cach = sum(
                         tinh_khoang_cach_haversine(
                             st.session_state.danh_sach_luu[i][COT_VI_DO], st.session_state.danh_sach_luu[i][COT_KINH_DO],
@@ -312,7 +309,6 @@ else:
                         dien_tich = tinh_dien_tich_da_giac(toa_do_cac_diem)
                         st.success(f"Diện tích vùng bao phủ: **{dien_tich:.2f} km²**")
 
-            # QUẢN LÝ DANH SÁCH ĐIỂM ĐÃ GHIM (HIỂN THỊ X/10 ĐIỂM)
             if so_luong_diem > 0:
                 with st.expander(f"📍 Dữ liệu điểm ghim ({so_luong_diem}/10)", expanded=False):
                     index_can_xoa = None
@@ -334,7 +330,6 @@ else:
                         st.session_state.ds_gan_nhat.clear()
                         st.rerun()
 
-        # THIẾT LẬP TỌA ĐỘ VÀ ZOOM CHO BẢN ĐỒ
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 14
         elif so_luong_diem > 0:
@@ -348,7 +343,6 @@ else:
 
         toa_do_vung = []
 
-        # 1. VẼ CÁC ĐIỂM ĐÃ GHIM (MÀU XANH DƯƠNG)
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -368,14 +362,12 @@ else:
             """
             folium.Marker([lat_l, lon_l], popup=folium.Popup(noi_dung_luu, max_width=240), icon=folium.Icon(color='blue', icon='bookmark')).add_to(m)
 
-        # Nối tuyến hoặc vẽ đa giác cho các điểm đã ghim
         if len(toa_do_vung) == 2:
             folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
         elif len(toa_do_vung) >= 3:
             toa_do_vung_toi_uu = sap_xep_toa_do_da_giac(toa_do_vung)
             folium.Polygon(locations=toa_do_vung_toi_uu, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
 
-        # 2. VẼ TRẠM ĐANG TRA CỨU HIỆN TẠI (MÀU ĐỎ)
         if st.session_state.tram_hien_tai is not None:
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
@@ -392,7 +384,7 @@ else:
             """
             folium.Marker([lat_val, lon_val], popup=folium.Popup(noi_dung_label, max_width=240, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
 
-            # 3. VẼ CÁC TRẠM LÂN CẬN GẦN NHẤT ĐƯỢC TÌM THẤY (MÀU XANH LÁ + ĐƯỜNG NỐI TIA)
+            # ĐÃ THAY ĐỔI: Đổi tên tiêu đề popup của trạm lân cận trên bản đồ
             for tram_near in st.session_state.ds_gan_nhat:
                 lat_n, lon_n = float(tram_near[COT_VI_DO]), float(tram_near[COT_KINH_DO])
                 kc_n = float(tram_near['KhoangCach'])
@@ -402,7 +394,7 @@ else:
                 
                 noi_dung_near = f"""
                 <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.4;'>
-                    <b style='color: green;'>📡 TRẠM LÂN CẬN GẦN NHẤT</b><br>
+                    <b style='color: green;'>📡 TRẠM BTS GẦN NHẤT</b><br>
                     <b>Cell ID:</b> {cell_n}<br>
                     <b>Khoảng cách:</b> {kc_n:.2f} km<br>
                     <b>CGI:</b> {cgi_n}<br>
@@ -410,8 +402,6 @@ else:
                 </div>
                 """
                 folium.Marker([lat_n, lon_n], popup=folium.Popup(noi_dung_near, max_width=240), icon=folium.Icon(color='green', icon='signal')).add_to(m)
-                
-                # Vẽ tia nối đứt nét từ trạm gốc đến trạm lân cận
                 folium.PolyLine(locations=[[lat_val, lon_val], [lat_n, lon_n]], color="green", weight=1.5, opacity=0.6, dash_array='5, 5').add_to(m)
 
         with col_right_map:
