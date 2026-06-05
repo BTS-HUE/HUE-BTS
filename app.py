@@ -104,27 +104,6 @@ def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
     return 2 * math.asin(math.sqrt(a)) * 6371.0 
 
-def sap_xep_toa_do_da_giac(toa_do):
-    """Sắp xếp chuỗi điểm nút theo góc cực quanh tâm hình học nhằm ngăn chặn lỗi đan chéo đồ họa"""
-    if len(toa_do) < 3:
-        return toa_do
-    trung_binh_lat = sum(p[0] for p in toa_do) / len(toa_do)
-    trung_binh_lon = sum(p[1] for p in toa_do) / len(toa_do)
-    return sorted(toa_do, key=lambda p: math.atan2(p[0] - trung_binh_lat, p[1] - trung_binh_lon))
-
-def tinh_dien_tich_da_giac(toa_do):
-    """Xác định diện tích bề mặt không gian bao phủ của tập hợp đỉnh trên mặt cầu phẳng (Đơn vị: km²)"""
-    if len(toa_do) < 3:
-        return 0.0
-    toa_do_chuan = sap_xep_toa_do_da_giac(toa_do)
-    area = 0.0
-    R = 6371.0 
-    for i in range(len(toa_do_chuan)):
-        lat1, lon1 = map(math.radians, toa_do_chuan[i])
-        lat2, lon2 = map(math.radians, toa_do_chuan[(i + 1) % len(toa_do_chuan)])
-        area += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2))
-    return abs(area * R * R / 2.0)
-
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
     """Đọc, chuẩn hóa định dạng phân đoạn dữ liệu và ghi bộ nhớ đệm luồng thông tin từ Cloud Sheet"""
@@ -297,21 +276,28 @@ else:
 
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
-            # 5.3. TÍNH TOÁN CÁC CHỈ SỐ HÌNH HỌC HẠ TẦNG
+            # 5.3. TÍNH TOÁN CÁC CHỈ SỐ HÌNH HỌC HẠ TẦNG (KHOẢNG CÁCH NỐI TIẾP)
             if so_luong_diem >= 2:
                 with st.expander("📏 KHOẢNG CÁCH", expanded=False):
-                    tong_khoang_cach = sum(
-                        tinh_khoang_cach_haversine(
-                            st.session_state.danh_sach_luu[i][COT_VI_DO], st.session_state.danh_sach_luu[i][COT_KINH_DO],
-                            st.session_state.danh_sach_luu[i+1][COT_VI_DO], st.session_state.danh_sach_luu[i+1][COT_KINH_DO]
-                        ) for i in range(so_luong_diem - 1)
-                    )
-                    st.info(f"Tổng chiều dài tuyến: **{tong_khoang_cach:.2f} km**")
+                    tong_khoang_cach = 0.0
+                    for i in range(so_luong_diem - 1):
+                        p1 = st.session_state.danh_sach_luu[i]
+                        p2 = st.session_state.danh_sach_luu[i+1]
+                        
+                        kc_chi_tiet = tinh_khoang_cach_haversine(
+                            p1[COT_VI_DO], p1[COT_KINH_DO],
+                            p2[COT_VI_DO], p2[COT_KINH_DO]
+                        )
+                        tong_khoang_cach += kc_chi_tiet
+                        
+                        st.markdown(
+                            f"<div style='font-size: 13px; margin-bottom: 6px;'>"
+                            f"🔹 <b>Trạm {p1[COT_CELL_ID]}</b> ➡️ <b>Trạm {p2[COT_CELL_ID]}</b>: <code>{kc_chi_tiet:.2f} km</code>"
+                            f"</div>", 
+                            unsafe_allow_html=True
+                        )
                     
-                    if so_luong_diem >= 3:
-                        toa_do_cac_diem = [[float(p[COT_VI_DO]), float(p[COT_KINH_DO])] for p in st.session_state.danh_sach_luu]
-                        dien_tich = tinh_dien_tich_da_giac(toa_do_cac_diem)
-                        st.success(f"Diện tích vùng bao phủ: **{dien_tich:.2f} km²**")
+                    st.info(f"Tổng chiều dài tuyến (theo thứ tự ghim): **{tong_khoang_cach:.2f} km**")
 
             # 5.4. ĐIỀU KHIỂN DANH SÁCH TOẠ ĐỘ GHIM LƯU TRỮ
             if so_luong_diem > 0:
@@ -349,7 +335,7 @@ else:
 
         toa_do_vung = []
 
-        # 5.6. VẼ CÁC THỰC THỂ LƯU TRỮ LÊN PHÂN LỚP ĐỊA LÝ (MARKERS DRAWER)
+        # 5.6. VẼ CÁC THỰC THỂ LƯU TRỮ LÊN PHÂN LỚP ĐỊA LÝ VÀ VẼ ĐƯỜNG LIÊN KẾT
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -369,13 +355,11 @@ else:
             """
             folium.Marker([lat_l, lon_l], popup=folium.Popup(noi_dung_luu, max_width=240), icon=folium.Icon(color='blue', icon='bookmark')).add_to(m)
 
-        if len(toa_do_vung) == 2:
+        # Luôn vẽ đường thẳng (PolyLine) nối chuỗi các điểm đã ghim, không vẽ vùng (Polygon)
+        if len(toa_do_vung) >= 2:
             folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
-        elif len(toa_do_vung) >= 3:
-            toa_do_vung_toi_uu = sap_xep_toa_do_da_giac(toa_do_vung)
-            folium.Polygon(locations=toa_do_vung_toi_uu, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
 
-        # 5.7. THIẾT LẬP ĐỒ HỌA MỤC TIÊU TRA CỨU VÀ ĐỒ THỊ LIÊN KẾT LIÊN TRẠM
+        # 5.7. THIẾT LẬP ĐỒ HỌA MỤC TIÊU TRA CỨU VÀ ĐỒ THỊ LIÊN KẾT LÂN CẬN
         if st.session_state.tram_hien_tai is not None:
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
@@ -384,7 +368,7 @@ else:
 
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
-                <b style='color: #D9534F;'>🎯 CHI TIẾT TRẠM TRA CỨU: {cell_val}</b><br>
+                <b style='color: #D9534F;'>🎯 THÔNG TIN TRẠM BTS: {cell_val}</b><br>
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Tọa độ:</b> {lat_val}, {lon_val}<br>
                 <b>Địa chỉ:</b> {dia_chi_val}
