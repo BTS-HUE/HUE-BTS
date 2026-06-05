@@ -30,6 +30,7 @@ if "logged_in" not in st.session_state:
 st.session_state.setdefault("danh_sach_luu", [])
 st.session_state.setdefault("tram_hien_tai", None)
 st.session_state.setdefault("ds_gan_nhat", [])
+st.session_state.setdefault("df_custom", None) # Bộ nhớ tạm lưu file upload riêng tư
 
 # ==============================================================================
 # 2. KHỞI TẠO LỚP ĐỊNH DẠNG GIAO DIỆN ĐÁP ỨNG NÂNG CAO (UI/UX STYLE Overrides)
@@ -169,10 +170,12 @@ if not st.session_state.logged_in:
 else:
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
+        # Hiển thị nhãn nguồn dữ liệu đang dùng cạnh tiêu đề chính
+        nguon_data_str = "📂 FILE UPLOAD" if st.session_state.df_custom is not None else "☁️ LIVE CLOUD"
         st.markdown(
-            "<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
-            "🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM BTS"
-            "</h2>", 
+            f"<h2 style='margin:0; color: var(--text-color); font-weight:700; font-size:22px; text-shadow: none;'>"
+            f"🛰️ TRUNG TÂM GIÁM SÁT VÀ ĐỊNH VỊ TRẠM BTS <span style='font-size:12px; color:#3B82F6; background:rgba(59,130,246,0.15); padding:3px 8px; border-radius:6px; margin-left:10px;'>{nguon_data_str}</span>"
+            f"</h2>", 
             unsafe_allow_html=True
         )
     with col_logout_layout:
@@ -182,6 +185,7 @@ else:
             st.session_state.danh_sach_luu.clear()
             st.session_state.tram_hien_tai = None
             st.session_state.ds_gan_nhat.clear()
+            st.session_state.df_custom = None
             st.rerun()
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: var(--border-color);'>", unsafe_allow_html=True)
@@ -189,7 +193,11 @@ else:
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
-        df = tai_co_so_du_lieu()
+        # CƠ CHẾ KIỂM TRA ĐIỀU HƯỚNG NGUỒN DỮ LIỆU THÔNG MINH
+        if st.session_state.df_custom is not None:
+            df = st.session_state.df_custom
+        else:
+            df = tai_co_so_du_lieu()
         
         COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
@@ -405,3 +413,62 @@ else:
     except Exception as e:
         with col_right_map:
             st.error(f"❌ Lỗi cấu trúc hoặc xử lý cơ sở dữ liệu: {e}")
+
+    # ==============================================================================
+    # 6. KHU VỰC NẠP FILE DỮ LIỆU BỔ TRỢ (ĐƯỢC ĐƯA XUỐNG DƯỚI CÙNG NHƯ TÍNH NĂNG PHỤ)
+    # ==============================================================================
+    st.markdown("<hr style='margin-top: 25px; margin-bottom: 15px; border-color: var(--border-color);'>", unsafe_allow_html=True)
+    
+    # Tạo Layout cho vùng nạp dữ liệu phụ dưới đáy
+    col_upload_left, col_upload_right = st.columns([7.5, 2.5])
+    
+    with col_upload_left:
+        uploaded_file = st.file_uploader(
+            "📥 Tải lên file dữ liệu BTS tùy chỉnh độc lập (CSV hoặc XLSX) nếu không muốn dùng data mặc định từ Cloud:", 
+            type=["csv", "xlsx"]
+        )
+    
+    with col_upload_right:
+        # Nút khôi phục dữ liệu gốc từ Cloud nếu đang dùng file cá nhân
+        st.write("<br>", unsafe_allow_html=True)
+        if st.session_state.df_custom is not None:
+            if st.button("🔄 Khôi phục dữ liệu Cloud", use_container_width=True, type="secondary"):
+                st.session_state.df_custom = None
+                st.session_state.danh_sach_luu.clear()
+                st.session_state.tram_hien_tai = None
+                st.session_state.ds_gan_nhat.clear()
+                st.toast("🔄 Đã chuyển về cơ sở dữ liệu trực tuyến thành công!")
+                st.rerun()
+
+    if uploaded_file:
+        try:
+            # Đọc cấu trúc file tải lên dưới dạng String để đồng bộ định dạng file gốc của bạn
+            if uploaded_file.name.endswith(".csv"):
+                df_new = pd.read_csv(uploaded_file, dtype=str)
+            else:
+                df_new = pd.read_excel(uploaded_file, dtype=str)
+            
+            df_new.columns = df_new.columns.str.strip()
+            for col in df_new.columns:
+                df_new[col] = df_new[col].fillna("").astype(str).str.strip()
+                
+            if 'MNC' in df_new.columns:
+                df_new['MNC'] = df_new['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
+            
+            # Kiểm tra xem file upload có đủ các trường dữ liệu lõi của bạn không
+            cac_cot_bat_buoc = ['MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude']
+            cot_thieu = [c for c in cac_cot_bat_buoc if c not in df_new.columns]
+            
+            if cot_thieu:
+                st.error(f"❌ Cấu trúc file không đồng bộ! File của bạn đang thiếu các cột bắt buộc: {cot_thieu}")
+            else:
+                # Đổi nguồn sang dữ liệu file vừa upload, dọn dẹp các điểm ghim cũ tránh xung đột vị trí
+                st.session_state.df_custom = df_new
+                st.session_state.danh_sach_luu.clear()
+                st.session_state.tram_hien_tai = None
+                st.session_state.ds_gan_nhat.clear()
+                st.toast("🎉 Tải file thành công! Hệ thống đã chuyển sang chế độ làm việc Offline.")
+                st.rerun()
+                
+        except Exception as upload_error:
+            st.error(f"❌ Có lỗi phát sinh khi xử lý dữ liệu file: {upload_error}")
