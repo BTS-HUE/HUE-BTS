@@ -3,3 +3,4 @@ pandas
 folium
 streamlit-folium
 streamlit-cookies-controller
+pip install streamlit pandas folium streamlit-folium
