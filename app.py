@@ -102,15 +102,30 @@ def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
     return 2 * math.asin(math.sqrt(a)) * 6371.0 # Bán kính trái đất (km)
 
+def sap_xep_toa_do_da_giac(toa_do):
+    """Sắp xếp các điểm ghim theo góc cực xung quanh tâm để chống đan chéo hình"""
+    if len(toa_do) < 3:
+        return toa_do
+    # Tính tọa độ trọng tâm (Centroid)
+    trung_binh_lat = sum(p[0] for p in toa_do) / len(toa_do)
+    trung_binh_lon = sum(p[1] for p in toa_do) / len(toa_do)
+    
+    # Sắp xếp các điểm dựa trên góc atan2 từ tâm hình học
+    return sorted(toa_do, key=lambda p: math.atan2(p[0] - trung_binh_lat, p[1] - trung_binh_lon))
+
 def tinh_dien_tich_da_giac(toa_do):
-    """Tính diện tích xấp xỉ của đa giác trên mặt cầu (km2)"""
+    """Tính diện tích của đa giác trên mặt cầu sau khi đã được sắp xếp chu chuẩn (km2)"""
     if len(toa_do) < 3:
         return 0.0
+    
+    # Bắt buộc phải sắp xếp lại thứ tự điểm trước khi áp dụng công thức tính diện tích
+    toa_do_chuan = sap_xep_toa_do_da_giac(toa_do)
+    
     area = 0.0
     R = 6371.0 # Bán kính trái đất (km)
-    for i in range(len(toa_do)):
-        lat1, lon1 = map(math.radians, toa_do[i])
-        lat2, lon2 = map(math.radians, toa_do[(i + 1) % len(toa_do)])
+    for i in range(len(toa_do_chuan)):
+        lat1, lon1 = map(math.radians, toa_do_chuan[i])
+        lat2, lon2 = map(math.radians, toa_do_chuan[(i + 1) % len(toa_do_chuan)])
         area += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2))
     return abs(area * R * R / 2.0)
 
@@ -119,7 +134,6 @@ def tai_co_so_du_lieu():
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
     data = pd.read_csv(URL, dtype=str)
     
-    # Tối ưu: Làm sạch dữ liệu ngay từ bước load cache để truy vấn mượt hơn
     data.columns = data.columns.str.strip()
     for col in data.columns:
         data[col] = data[col].fillna("").astype(str).str.strip()
@@ -147,15 +161,14 @@ if not st.session_state.logged_in:
     
     _, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
     with col_login_1:
-        tai_khoan_nhap = st.text_input("Tài khoản:", value="", key="username_input") # Đã đổi tên
+        tai_khoan_nhap = st.text_input("Tài khoản:", value="", key="username_input")
     with col_login_2:
-        mat_khau_nhap = st.text_input("Mật khẩu:", type="password", key="password_input") # Đã đổi tên
+        mat_khau_nhap = st.text_input("Mật khẩu:", type="password", key="password_input")
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
         st.rerun()
 
-    # Vô hiệu hóa auto-fill trình duyệt
     st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'new-password'));</script>", unsafe_allow_html=True)
 
     url_hinh_nen = "https://raw.githubusercontent.com/BTS-HUE/HUE-BTS/refs/heads/main/WC%20to.png"
@@ -201,7 +214,6 @@ else:
     try:
         df = tai_co_so_du_lieu()
         
-        # Biến tĩnh định danh cột
         COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
@@ -220,7 +232,6 @@ else:
 
             if nut_tim_kiem:
                 if all([f1, f2, f3, f4]):
-                    # Do dữ liệu đã được strip() trong cache nên chỉ cần so sánh trực tiếp
                     ket_qua = df[(df[COT_MCC] == f1) & (df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
                     
                     if not ket_qua.empty:
@@ -253,7 +264,6 @@ else:
                     )
                     st.info(f"Tổng chiều dài tuyến: **{tong_khoang_cach:.2f} km**")
                     
-                    # Tính toán và hiển thị diện tích nếu có từ 3 điểm trở lên
                     if so_luong_diem >= 3:
                         toa_do_cac_diem = [[float(p[COT_VI_DO]), float(p[COT_KINH_DO])] for p in st.session_state.danh_sach_luu]
                         dien_tich = tinh_dien_tich_da_giac(toa_do_cac_diem)
@@ -279,7 +289,6 @@ else:
                         st.session_state.tram_hien_tai = None
                         st.rerun()
 
-        # Thiết lập vị trí trung tâm bản đồ
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 16
         elif so_luong_diem > 0:
@@ -287,14 +296,12 @@ else:
 
         m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
         
-        # Thêm các lớp bản đồ
         folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', attr='Google Satellite', name='Vệ tinh (Satellite)', overlay=False).add_to(m)
         folium.TileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', attr='Google Maps Street', name='Đường phố (Street)', overlay=False).add_to(m)
         folium.LayerControl().add_to(m)
 
         toa_do_vung = []
 
-        # Hiển thị các trạm đã lưu
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -314,13 +321,14 @@ else:
             """
             folium.Marker([lat_l, lon_l], popup=folium.Popup(noi_dung_luu, max_width=240), icon=folium.Icon(color='blue', icon='bookmark')).add_to(m)
 
-        # Vẽ Line hoặc Polygon nếu có nhiều điểm
+        # ÁP DỤNG THUẬT TOÁN TỐI ƯU HÓA ĐA GIÁC:
         if len(toa_do_vung) == 2:
             folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
         elif len(toa_do_vung) >= 3:
-            folium.Polygon(locations=toa_do_vung, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
+            # Sắp xếp lại thứ tự các điểm theo vòng tròn trước khi vẽ lên bản đồ
+            toa_do_vung_toi_uu = sap_xep_toa_do_da_giac(toa_do_vung)
+            folium.Polygon(locations=toa_do_vung_toi_uu, color="#0275d8", weight=3, fill=True, fill_color="#0275d8", fill_opacity=0.15).add_to(m)
 
-        # Hiển thị trạm đang truy vấn hiện tại
         if st.session_state.tram_hien_tai is not None:
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
