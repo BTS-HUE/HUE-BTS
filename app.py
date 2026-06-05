@@ -2,13 +2,25 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import folium_static
-import math # BỔ SUNG: Thư viện tính toán khoảng cách
+import math
 
-# BỔ SUNG: Hàm tính khoảng cách giữa 2 tọa độ (Haversine)
+# ==========================================
+# CÁC HÀM BỔ SUNG ĐỂ TÍNH TOÁN VÀ CHỐNG SẬP APP
+# ==========================================
 def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
-    r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    """Thuật toán tính khoảng cách địa lý (km)"""
+    r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
     return 2 * math.asin(math.sqrt(a)) * 6371.0
+
+def khu_loi_ky_tu_popup(row, key):
+    """Xử lý triệt để lỗi ký tự đặc biệt (dấu nháy, nan) làm vỡ JavaScript của bản đồ"""
+    val = row.get(key, '')
+    if pd.isna(val):
+        return ''
+    # Khử toàn bộ dấu nháy và xuống dòng nguy hiểm
+    return str(val).replace("'", "\\'").replace('"', '\\"').replace('\n', ' ').strip()
+
 
 # =========================
 # 1. CONFIG
@@ -28,12 +40,18 @@ def load_data(file):
         df = pd.read_csv(file)
     else:
         df = pd.read_excel(file)
-
     return df
 
 
 if uploaded_file:
-    df = load_data(uploaded_file)
+    # BẪY LỖI 1: Phòng trường hợp máy bạn chưa cài thư viện đọc file Excel (openpyxl)
+    try:
+        df = load_data(uploaded_file)
+    except Exception as e:
+        st.error(f"❌ Lỗi xảy ra khi đọc file dữ liệu: {e}")
+        if "openpyxl" in str(e).lower():
+            st.info("💡 **Cách sửa:** Bạn hãy mở Terminal/Command Prompt lên và chạy lệnh: `pip install openpyxl` rồi khởi động lại Streamlit nhé.")
+        st.stop()
 
     # =========================
     # 3. CLEAN COLUMN NAMES
@@ -85,75 +103,86 @@ if uploaded_file:
     if mnc_filter:
         df = df[df["MNC"].isin(mnc_filter)]
 
-    # SỬA LỖI: Kiểm tra nếu sau khi lọc dữ liệu bị trống thì dừng lại, không để Map bị lỗi NaN
+    # BẪY LỖI 2: Nếu bộ lọc Sidebar làm trống dữ liệu, chặn lại không cho vẽ Map để tránh crash
     if df.empty:
-        st.warning("⚠️ Không tìm thấy dữ liệu trạm BTS nào phù hợp với bộ lọc hiện tại!")
+        st.warning("⚠️ Không tìm thấy trạm BTS nào phù hợp với bộ lọc hiện tại của bạn!")
         st.stop()
 
-    # =========================
-    # 7. MAP INIT
-    # =========================
-    center_lat = df["Latitude"].mean()
-    center_lng = df["Longitude"].mean()
+    # BẪY LỖI 3: Bọc toàn bộ quá trình dựng bản đồ để bắt lỗi chính xác thay vì sập ứng dụng
+    try:
+        # =========================
+        # 7. MAP INIT
+        # =========================
+        center_lat = df["Latitude"].mean()
+        center_lng = df["Longitude"].mean()
 
-    m = folium.Map(location=[center_lat, center_lng], zoom_start=12)
+        m = folium.Map(location=[center_lat, center_lng], zoom_start=12)
 
-    # =========================
-    # 8. ADD MARKERS & TRACK PATH
-    # =========================
-    # BỔ SUNG: Khởi tạo dữ liệu để vẽ tuyến hành trình di chuyển
-    toa_do_tuyen_duong = []
-    tong_quang_duong = 0.0
-    
-    # Reset lại chỉ mục để vòng lặp tính khoảng cách chạy chính xác
-    df_plot = df.reset_index(drop=True)
-
-    for idx, row in df_plot.iterrows():
-        lat_curr = row["Latitude"]
-        lon_curr = row["Longitude"]
-        toa_do_tuyen_duong.append([lat_curr, lon_curr])
-
-        # Tính toán tích lũy khoảng cách từ trạm này sang trạm tiếp theo
-        if idx > 0:
-            lat_prev = df_plot.loc[idx - 1, "Latitude"]
-            lon_prev = df_plot.loc[idx - 1, "Longitude"]
-            tong_quang_duong += tinh_khoang_cach_haversine(lat_prev, lon_prev, lat_curr, lon_curr)
-
-        # GIỮ NGUYÊN BẢN: Định dạng Popup gốc của bạn
-        popup_html = f"""
-        <b>CGI:</b> {row.get('CGI','')}<br>
-        <b>Cell ID:</b> {row.get('CELL ID','')}<br>
-        <b>LAC/TAC:</b> {row.get('LAC/TAC','')}<br>
-        <b>Địa chỉ:</b> {row.get('Địa chỉ','')}<br>
-        <b>Ghi chú:</b> {row.get('Ghi chú','')}
-        """
-
-        folium.Marker(
-            location=[lat_curr, lon_curr],
-            popup=folium.Popup(popup_html, max_width=300),
-            tooltip=row.get("CGI", "BTS Cell")
-        ).add_to(m)
-
-    # BỔ SUNG: Vẽ đường nối liền các trạm hành trình (Màu cam nét đứt)
-    if len(toa_do_tuyen_duong) >= 2:
-        folium.PolyLine(
-            locations=toa_do_tuyen_duong, 
-            color="#e67e22", 
-            weight=4, 
-            opacity=0.8, 
-            dash_array='6, 6'
-        ).add_to(m)
-
-    # =========================
-    # 9. DISPLAY MAP
-    # =========================
-    st.subheader("🗺️ BTS Map")
-    
-    # BỔ SUNG: Hiển thị tổng quãng đường của file Timeline lên phía trên bản đồ
-    if len(toa_do_tuyen_duong) >= 2:
-        st.info(f"🐾 Tổng chiều dài lộ trình di chuyển theo Timeline: **{tong_quang_duong:.2f} km**")
+        # =========================
+        # 8. ADD MARKERS & ROUTE LINE
+        # =========================
+        toa_do_tuyen_duong = []
+        tong_quang_duong = 0.0
         
-    folium_static(m)
+        # Reset index để vòng lặp tính tiến trình timeline chính xác theo thứ tự dòng
+        df_plot = df.reset_index(drop=True)
+
+        for idx, row in df_plot.iterrows():
+            lat_curr = float(row["Latitude"])
+            lon_curr = float(row["Longitude"])
+            toa_do_tuyen_duong.append([lat_curr, lon_curr])
+
+            # Tính tích lũy quãng đường di chuyển nối tiếp giữa các trạm theo dòng thời gian
+            if idx > 0:
+                lat_prev = float(df_plot.loc[idx - 1, "Latitude"])
+                lon_prev = float(df_plot.loc[idx - 1, "Longitude"])
+                tong_quang_duong += tinh_khoang_cach_haversine(lat_prev, lon_prev, lat_curr, lon_curr)
+
+            # Chuẩn hóa an toàn các chuỗi ký tự trước khi truyền vào mã HTML của Popup
+            cgi_s = khu_loi_ky_tu_popup(row, 'CGI')
+            cell_s = khu_loi_ky_tu_popup(row, 'CELL ID')
+            lac_s = khu_loi_ky_tu_popup(row, 'LAC/TAC')
+            diachi_s = khu_loi_ky_tu_popup(row, 'Địa chỉ')
+            ghichu_s = khu_loi_ky_tu_popup(row, 'Ghi chú')
+
+            popup_html = f"""
+            <b>CGI:</b> {cgi_s}<br>
+            <b>Cell ID:</b> {cell_s}<br>
+            <b>LAC/TAC:</b> {lac_s}<br>
+            <b>Địa chỉ:</b> {diachi_s}<br>
+            <b>Ghi chú:</b> {ghichu_s}
+            """
+
+            folium.Marker(
+                location=[lat_curr, lon_curr],
+                popup=folium.Popup(popup_html, max_width=300),
+                tooltip=row.get("CGI", "BTS Cell")
+            ).add_to(m)
+
+        # Vẽ đường nối đứt đoạn màu cam kết nối các vị trí trạm BTS hành trình
+        if len(toa_do_tuyen_duong) >= 2:
+            folium.PolyLine(
+                locations=toa_do_tuyen_duong, 
+                color="#e67e22", 
+                weight=4, 
+                opacity=0.8, 
+                dash_array='6, 6'
+            ).add_to(m)
+
+        # =========================
+        # 9. DISPLAY MAP
+        # =========================
+        st.subheader("🗺️ BTS Map")
+        
+        # Hiển thị tổng độ dài hành trình tính toán được lên phía trên bản đồ
+        if len(toa_do_tuyen_duong) >= 2:
+            st.info(f"🐾 Tổng chiều dài lộ trình di chuyển theo tiến trình Timeline: **{tong_quang_duong:.2f} km**")
+            
+        folium_static(m)
+
+    except Exception as map_error:
+        st.error(f"❌ Lỗi trong quá trình khởi tạo hoặc hiển thị Bản đồ Folium: {map_error}")
+        st.exception(map_error) # Hiển thị chi tiết lỗi kỹ thuật để dễ tra cứu
 
     # =========================
     # 10. TABLE VIEW
