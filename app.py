@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import folium_static
-import math  # BỔ SUNG MỚI: Để tính toán khoảng cách lộ trình
+import math # BỔ SUNG: Thư viện tính toán khoảng cách
 
-# BỔ SUNG MỚI: Hàm thuật toán tính khoảng cách giữa các điểm tọa độ (Haversine)
+# BỔ SUNG: Hàm tính khoảng cách giữa 2 tọa độ (Haversine)
 def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
     r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
@@ -28,6 +28,7 @@ def load_data(file):
         df = pd.read_csv(file)
     else:
         df = pd.read_excel(file)
+
     return df
 
 
@@ -84,6 +85,11 @@ if uploaded_file:
     if mnc_filter:
         df = df[df["MNC"].isin(mnc_filter)]
 
+    # SỬA LỖI: Kiểm tra nếu sau khi lọc dữ liệu bị trống thì dừng lại, không để Map bị lỗi NaN
+    if df.empty:
+        st.warning("⚠️ Không tìm thấy dữ liệu trạm BTS nào phù hợp với bộ lọc hiện tại!")
+        st.stop()
+
     # =========================
     # 7. MAP INIT
     # =========================
@@ -92,19 +98,14 @@ if uploaded_file:
 
     m = folium.Map(location=[center_lat, center_lng], zoom_start=12)
 
-    # BỔ SUNG MỚI: Thêm các lớp bản đồ (Vệ tinh / Đường phố) để bạn dễ dàng chuyển đổi khi xem vị trí BTS
-    folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', attr='Google Satellite', name='Bản đồ Vệ tinh', overlay=False).add_to(m)
-    folium.TileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', attr='Google Maps Street', name='Bản đồ Đường phố', overlay=False).add_to(m)
-    folium.LayerControl().add_to(m)
-
     # =========================
-    # 8. ADD MARKERS & TRACK TIMELINE PATH
+    # 8. ADD MARKERS & TRACK PATH
     # =========================
-    # BỔ SUNG MỚI: Khởi tạo danh sách lưu tọa độ và biến tính tổng quãng đường
+    # BỔ SUNG: Khởi tạo dữ liệu để vẽ tuyến hành trình di chuyển
     toa_do_tuyen_duong = []
     tong_quang_duong = 0.0
     
-    # Sắp xếp lại chỉ mục (index) để vòng lặp tracking lấy đúng STT hành trình tăng dần
+    # Reset lại chỉ mục để vòng lặp tính khoảng cách chạy chính xác
     df_plot = df.reset_index(drop=True)
 
     for idx, row in df_plot.iterrows():
@@ -112,14 +113,14 @@ if uploaded_file:
         lon_curr = row["Longitude"]
         toa_do_tuyen_duong.append([lat_curr, lon_curr])
 
-        # BỔ SUNG MỚI: Tính khoảng cách nối tiếp giữa điểm trước và điểm hiện tại
+        # Tính toán tích lũy khoảng cách từ trạm này sang trạm tiếp theo
         if idx > 0:
             lat_prev = df_plot.loc[idx - 1, "Latitude"]
             lon_prev = df_plot.loc[idx - 1, "Longitude"]
             tong_quang_duong += tinh_khoang_cach_haversine(lat_prev, lon_prev, lat_curr, lon_curr)
 
+        # GIỮ NGUYÊN BẢN: Định dạng Popup gốc của bạn
         popup_html = f"""
-        <b>Thứ tự Timeline:</b> {idx + 1}<br>
         <b>CGI:</b> {row.get('CGI','')}<br>
         <b>Cell ID:</b> {row.get('CELL ID','')}<br>
         <b>LAC/TAC:</b> {row.get('LAC/TAC','')}<br>
@@ -130,11 +131,10 @@ if uploaded_file:
         folium.Marker(
             location=[lat_curr, lon_curr],
             popup=folium.Popup(popup_html, max_width=300),
-            tooltip=f"Vị trí {idx + 1}: {row.get('CGI', 'BTS Cell')}",
-            icon=folium.Icon(color='orange', icon='history', prefix='fa') # Đổi màu icon cam để đồng bộ với tuyến Timeline hành trình
+            tooltip=row.get("CGI", "BTS Cell")
         ).add_to(m)
 
-    # BỔ SUNG MỚI: Vẽ đường thẳng đứt đoạn kết nối chuỗi hành trình di chuyển qua các trạm BTS
+    # BỔ SUNG: Vẽ đường nối liền các trạm hành trình (Màu cam nét đứt)
     if len(toa_do_tuyen_duong) >= 2:
         folium.PolyLine(
             locations=toa_do_tuyen_duong, 
@@ -149,9 +149,9 @@ if uploaded_file:
     # =========================
     st.subheader("🗺️ BTS Map")
     
-    # BỔ SUNG MỚI: Hiển thị thông số tổng chiều dài hành trình đã đi qua ngay trên Map
+    # BỔ SUNG: Hiển thị tổng quãng đường của file Timeline lên phía trên bản đồ
     if len(toa_do_tuyen_duong) >= 2:
-        st.info(f"🐾 Tổng quãng đường di chuyển theo tiến trình Timeline: **{tong_quang_duong:.2f} km**")
+        st.info(f"🐾 Tổng chiều dài lộ trình di chuyển theo Timeline: **{tong_quang_duong:.2f} km**")
         
     folium_static(m)
 
