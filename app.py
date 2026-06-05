@@ -231,7 +231,7 @@ else:
                     
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
-                        st.session_state.ds_gan_nhat = [] 
+                        st.session_state.ds_gan_nhat = [] # Reset danh sách cũ khi có truy vấn mới
                         st.success(f"🎯 Đã phát hiện ID: {f4}")
                     else:
                         st.session_state.tram_hien_tai = None
@@ -240,7 +240,7 @@ else:
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ tham số!")
 
-            # XỬ LÝ KHI CÓ TRẠM ĐANG CHỌN
+            # XỬ LÝ KHI CÓ TRẠM ĐANG TRA CỨU
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
@@ -253,6 +253,7 @@ else:
                     else:
                         st.toast("Cảnh báo: Trạm này đã được ghim trước đó.")
                 
+                # SỬA LẠI LOGIC: Nhấn nút này hệ thống mới tính toán dữ liệu gần nhất
                 if st.button("📡 Tìm các trạm gần nhất", type="secondary", use_container_width=True):
                     lat_curr = float(st.session_state.tram_hien_tai[COT_VI_DO])
                     lon_curr = float(st.session_state.tram_hien_tai[COT_KINH_DO])
@@ -269,7 +270,7 @@ else:
                         st.session_state.ds_gan_nhat = []
                         st.toast("⚠️ Không tìm thấy trạm nào khác trong CSDL.")
             
-            # ĐÃ THAY ĐỔI: Đổi tên expander hiển thị danh sách trạm lân cận
+            # SỬA LẠI GIAO DIỆN: Chỉ xuất hiện và bung ra (expanded=True) KHI danh sách có dữ liệu
             if st.session_state.tram_hien_tai is not None and st.session_state.ds_gan_nhat:
                 with st.expander("📡 TRẠM BTS GẦN NHẤT", expanded=True):
                     for idx, tram_near in enumerate(st.session_state.ds_gan_nhat):
@@ -384,7 +385,6 @@ else:
             """
             folium.Marker([lat_val, lon_val], popup=folium.Popup(noi_dung_label, max_width=240, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
 
-            # ĐÃ THAY ĐỔI: Đổi tên tiêu đề popup của trạm lân cận trên bản đồ
             for tram_near in st.session_state.ds_gan_nhat:
                 lat_n, lon_n = float(tram_near[COT_VI_DO]), float(tram_near[COT_KINH_DO])
                 kc_n = float(tram_near['KhoangCach'])
