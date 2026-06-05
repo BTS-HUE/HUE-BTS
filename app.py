@@ -102,6 +102,18 @@ def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
     return 2 * math.asin(math.sqrt(a)) * 6371.0 # Bán kính trái đất (km)
 
+def tinh_dien_tich_da_giac(toa_do):
+    """Tính diện tích xấp xỉ của đa giác trên mặt cầu (km2)"""
+    if len(toa_do) < 3:
+        return 0.0
+    area = 0.0
+    R = 6371.0 # Bán kính trái đất (km)
+    for i in range(len(toa_do)):
+        lat1, lon1 = map(math.radians, toa_do[i])
+        lat2, lon2 = map(math.radians, toa_do[(i + 1) % len(toa_do)])
+        area += (lon2 - lon1) * (2 + math.sin(lat1) + math.sin(lat2))
+    return abs(area * R * R / 2.0)
+
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
@@ -135,9 +147,9 @@ if not st.session_state.logged_in:
     
     _, col_login_1, col_login_2 = st.columns([7.0, 1.5, 1.5])
     with col_login_1:
-        tai_khoan_nhap = st.text_input("Tài khoản định danh:", value="", key="username_input")
+        tai_khoan_nhap = st.text_input("Tài khoản:", value="", key="username_input") # Đã đổi tên
     with col_login_2:
-        mat_khau_nhap = st.text_input("Mã xác thực:", type="password", key="password_input")
+        mat_khau_nhap = st.text_input("Mật khẩu:", type="password", key="password_input") # Đã đổi tên
         
     if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
         st.session_state.logged_in = True
@@ -232,7 +244,7 @@ else:
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
             if so_luong_diem >= 2:
-                with st.expander("📏 Phân tích khoảng cách", expanded=False):
+                with st.expander("📏 Phân tích không gian", expanded=False):
                     tong_khoang_cach = sum(
                         tinh_khoang_cach_haversine(
                             st.session_state.danh_sach_luu[i][COT_VI_DO], st.session_state.danh_sach_luu[i][COT_KINH_DO],
@@ -240,6 +252,12 @@ else:
                         ) for i in range(so_luong_diem - 1)
                     )
                     st.info(f"Tổng chiều dài tuyến: **{tong_khoang_cach:.2f} km**")
+                    
+                    # Tính toán và hiển thị diện tích nếu có từ 3 điểm trở lên
+                    if so_luong_diem >= 3:
+                        toa_do_cac_diem = [[float(p[COT_VI_DO]), float(p[COT_KINH_DO])] for p in st.session_state.danh_sach_luu]
+                        dien_tich = tinh_dien_tich_da_giac(toa_do_cac_diem)
+                        st.success(f"Diện tích vùng bao phủ: **{dien_tich:.2f} km²**")
 
             if so_luong_diem > 0:
                 with st.expander(f"📍 Dữ liệu điểm ghim ({so_luong_diem})", expanded=False):
