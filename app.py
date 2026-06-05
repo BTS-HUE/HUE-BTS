@@ -255,7 +255,7 @@ else:
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
             if so_luong_diem >= 2:
-                with st.expander("📏 Phân tích không gian", expanded=False):
+                with st.expander("📏 khoảng cách", expanded=False):
                     tong_khoang_cach = sum(
                         tinh_khoang_cach_haversine(
                             st.session_state.danh_sach_luu[i][COT_VI_DO], st.session_state.danh_sach_luu[i][COT_KINH_DO],
