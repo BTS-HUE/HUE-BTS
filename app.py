@@ -200,9 +200,8 @@ else:
         
         COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
-
-        with col_left_search:
-           with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
+with col_left_search:
+            with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
                     # --- Hàng 1: MCC và MNC ---
                     col_f1, col_f2 = st.columns(2)
@@ -219,8 +218,14 @@ else:
                         f4 = st.text_input("Cell ID:", key="cell_in", placeholder="Cell ID").strip()
                     
                     if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
-                    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True) # Tạo khoảng trống nhỏ trước nút bấm
+                    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
                     nut_tim_kiem = st.form_submit_button("🔍 Tìm Kiếm", use_container_width=True)
+            
+            # Đảm bảo 2 khối dưới đây thẳng hàng với 'with st.expander'
+            st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
+
+            if nut_tim_kiem:
+                if all([f1, f2, f3, f4]):
             
             st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
 
