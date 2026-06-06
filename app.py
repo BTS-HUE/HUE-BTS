@@ -164,7 +164,7 @@ if not st.session_state.logged_in:
         """
         <div style='background-color: rgba(15, 23, 42, 0.85); padding: 35px; border-radius: 12px; color: white; text-align: center; margin-top: 12%; box-shadow: 0px 10px 25px rgba(0,0,0,0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1);'>
             <h2 style='color: #ffffff; margin-bottom: 12px; font-weight: 700; letter-spacing: 1px;'>🔒 XÁC THỰC QUYỀN TRUY CẬP</h2>
-            <p style='font-size: 15px; opacity: 0.85; margin: 0;'>Vui lòng cung cấp thông tin định danh tại góc phải màn hình để truy cập cơ sở dữ liệu hạ tầng.</p>
+            <p style='font-size: 15px; opacity: 0.85; margin: 0;'>Vui lòng cung cấp thông định danh tại góc phải màn hình để truy cập cơ sở dữ liệu hạ tầng.</p>
         </div>
         """, 
         unsafe_allow_html=True
@@ -200,7 +200,8 @@ else:
         
         COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
-with col_left_search:
+
+        with col_left_search:
             with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
                     # --- Hàng 1: MCC và MNC ---
@@ -220,12 +221,6 @@ with col_left_search:
                     if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
                     st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
                     nut_tim_kiem = st.form_submit_button("🔍 Tìm Kiếm", use_container_width=True)
-            
-            # Đảm bảo 2 khối dưới đây thẳng hàng với 'with st.expander'
-            st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
-
-            if nut_tim_kiem:
-                if all([f1, f2, f3, f4]):
             
             st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
 
@@ -249,7 +244,7 @@ with col_left_search:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
                 if st.button("📌 Gắn thẻ tọa độ trạm này", type="primary", use_container_width=True):
-                    if len(st.session_state.danh_sach_luu) >= 50: # Đã tăng lên 50 để vẽ hành trình
+                    if len(st.session_state.danh_sach_luu) >= 50: 
                         st.toast("❌ Đã đạt giới hạn tối đa điểm ghim!")
                     elif not any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu):
                         st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
