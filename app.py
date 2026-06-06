@@ -89,6 +89,20 @@ st.markdown(
         position: absolute !important; top: 15px !important; left: 15px !important; width: 320px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
+    /* --- GIẢI PHÁP CSS GRID CHO FORM TÌM KIẾM --- */
+    /* Chia lưới 2 cột bằng nhau (1fr 1fr), ép các ô nhập liệu gọn gàng không tràn viền */
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: 100% !important;
+        min-width: 0 !important; /* Đảm bảo nội dung không làm vỡ lưới (quan trọng) */
+        padding: 0 !important;
+    }
+
     /* 2.4. ĐÁP ỨNG THIẾT BỊ DI ĐỘNG */
     @media (max-width: 768px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
