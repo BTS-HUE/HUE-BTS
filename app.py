@@ -202,14 +202,24 @@ else:
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
-            with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
+           with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
-                    f1 = st.text_input("Mã Quốc gia (MCC):", key="mcc_in").strip()
-                    f2 = st.text_input("Mã Mạng (MNC):", key="mnc_in").strip()
-                    f3 = st.text_input("Mã Vùng (LAC/TAC):", key="lac_in").strip()
-                    f4 = st.text_input("Cell ID:", key="cell_in").strip()
+                    # --- Hàng 1: MCC và MNC ---
+                    col_f1, col_f2 = st.columns(2)
+                    with col_f1:
+                        f1 = st.text_input("Mã Quốc gia:", key="mcc_in", placeholder="MCC").strip()
+                    with col_f2:
+                        f2 = st.text_input("Mã Mạng:", key="mnc_in", placeholder="MNC").strip()
+                    
+                    # --- Hàng 2: LAC/TAC và Cell ID ---
+                    col_f3, col_f4 = st.columns(2)
+                    with col_f3:
+                        f3 = st.text_input("Mã Vùng:", key="lac_in", placeholder="LAC/TAC").strip()
+                    with col_f4:
+                        f4 = st.text_input("Cell ID:", key="cell_in", placeholder="Cell ID").strip()
                     
                     if f2.isdigit() and len(f2) == 1: f2 = f2.zfill(2)
+                    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True) # Tạo khoảng trống nhỏ trước nút bấm
                     nut_tim_kiem = st.form_submit_button("🔍 Tìm Kiếm", use_container_width=True)
             
             st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'one-time-code'));</script>", unsafe_allow_html=True)
