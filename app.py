@@ -341,4 +341,204 @@ else:
                             unsafe_allow_html=True
                         )
                     
-                    st.
+                    st.info(f"Tổng chiều dài tuyến đường: **{tong_khoang_cach:.2f} km**")
+
+            # ĐIỀU KHIỂN DANH SÁCH TOẠ ĐỘ GHIM LƯU TRỮ
+            if so_luong_diem > 0:
+                with st.expander(f"📍 Dữ liệu lộ trình/điểm ghim ({so_luong_diem})", expanded=False):
+                    index_can_xoa = None
+                    for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
+                        col_cell_name, col_del_btn = st.columns([7, 3])
+                        with col_cell_name:
+                            thoi_gian_hien_thi = truy_xuat_du_lieu_cot(tram_luu, ['Thời gian đo_mapped', 'Thời gian'])
+                            if thoi_gian_hien_thi != "Không có dữ liệu":
+                                st.markdown(f"<div style='font-size:12px; padding-top:5px;'>ID: {tram_luu[COT_CELL_ID]} ({thoi_gian_hien_thi})</div>", unsafe_allow_html=True)
+                            else:
+                                st.markdown(f"<div style='font-size:12px; padding-top:5px;'>ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
+                        with col_del_btn:
+                            if st.button("Hủy", key=f"del_route_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
+                                index_can_xoa = idx
+                    
+                    if index_can_xoa is not None:
+                        st.session_state.danh_sach_luu.pop(index_can_xoa)
+                        st.rerun()
+
+                    if st.button("🗑️ Xóa toàn bộ", type="secondary", use_container_width=True):
+                        st.session_state.danh_sach_luu.clear()
+                        st.session_state.tram_hien_tai = None
+                        st.session_state.ds_gan_nhat.clear()
+                        st.rerun()
+
+        # KHỞI TẠO VÀ PHÂN LỚP ĐỒ HỌA BẢN ĐỒ LỚN (MAP CANVAS LAYERS)
+        if st.session_state.tram_hien_tai is not None:
+            vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 14
+        elif so_luong_diem > 0:
+            vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.danh_sach_luu[-1][COT_VI_DO]), float(st.session_state.danh_sach_luu[-1][COT_KINH_DO]), 14
+
+        m = folium.Map(location=[vi_do_xem, kinh_do_xem], zoom_start=muc_zoom, control_scale=True)
+        
+        folium.TileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', attr='Google Satellite', name='Vệ tinh (Satellite)', overlay=False).add_to(m)
+        folium.TileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', attr='Google Maps Street', name='Đường phố (Street)', overlay=False).add_to(m)
+        folium.LayerControl().add_to(m)
+
+        toa_do_vung = []
+
+        # VẼ CÁC THỰC THỂ LƯU TRỮ LÊN PHÂN LỚP ĐỊA LÝ VÀ VẼ ĐƯỜNG LIÊN KẾT
+        for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
+            lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
+            toa_do_vung.append([lat_l, lon_l])
+            
+            cgi_l = truy_xuat_du_lieu_cot(tram_luu, ['CGI', 'cgi'])
+            addr_l = truy_xuat_du_lieu_cot(tram_luu, ['Địa chỉ', 'dia chi', 'Address'])
+            cell_l = tram_luu[COT_CELL_ID]
+            thoi_gian_l = truy_xuat_du_lieu_cot(tram_luu, ['Thời gian đo_mapped'])
+
+            html_thoi_gian = f"<b>Thời gian:</b> <span style='color:red;'>{thoi_gian_l}</span><br>" if thoi_gian_l != "Không có dữ liệu" else ""
+
+            noi_dung_luu = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                <b style='color: #0275d8;'>📌 ĐIỂM LỘ TRÌNH [{index+1}]</b><br>
+                {html_thoi_gian}
+                <b>Cell ID:</b> {cell_l}<br>
+                <b>CGI:</b> {cgi_l}<br>
+                <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
+                <b>Địa chỉ:</b> {addr_l}
+            </div>
+            """
+            folium.Marker([lat_l, lon_l], popup=folium.Popup(noi_dung_luu, max_width=240), icon=folium.Icon(color='blue', icon='bookmark')).add_to(m)
+
+        # Vẽ đường thẳng (PolyLine) nối chuỗi các điểm đã ghim
+        if len(toa_do_vung) >= 2:
+            folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
+
+        # THIẾT LẬP ĐỒ HỌA MỤC TIÊU TRA CỨU VÀ ĐỒ THỊ LIÊN KẾT LÂN CẬN
+        if st.session_state.tram_hien_tai is not None:
+            cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
+            dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
+            cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
+            lat_val, lon_val = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO])
+            thoi_gian_curr = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Thời gian đo_mapped'])
+            
+            html_time_curr = f"<b>Thời gian:</b> <span style='color:red;'>{thoi_gian_curr}</span><br>" if thoi_gian_curr != "Không có dữ liệu" else ""
+
+            noi_dung_label = f"""
+            <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                <b style='color: #D9534F;'>🎯 THÔNG TIN TRẠM BTS: {cell_val}</b><br>
+                {html_time_curr}
+                <b>CGI:</b> {cgi_val}<br>
+                <b>Tọa độ:</b> {lat_val}, {lon_val}<br>
+                <b>Địa chỉ:</b> {dia_chi_val}
+            </div>
+            """
+            folium.Marker([lat_val, lon_val], popup=folium.Popup(noi_dung_label, max_width=240, show=True), icon=folium.Icon(color='red', icon='info-sign')).add_to(m)
+
+            for tram_near in st.session_state.ds_gan_nhat:
+                lat_n, lon_n = float(tram_near[COT_VI_DO]), float(tram_near[COT_KINH_DO])
+                kc_n = float(tram_near['KhoangCach'])
+                cell_n = tram_near[COT_CELL_ID]
+                cgi_n = truy_xuat_du_lieu_cot(pd.Series(tram_near), ['CGI', 'cgi'])
+                addr_n = truy_xuat_du_lieu_cot(pd.Series(tram_near), ['Địa chỉ', 'dia chi', 'Address'])
+                
+                noi_dung_near = f"""
+                <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
+                    <b style='color: #28a745;'>📡 THÔNG TIN TRẠM LÂN CẬN</b><br>
+                    <b>Cell ID:</b> {cell_n}<br>
+                    <b>Khoảng cách:</b> {kc_n:.2f} km<br>
+                    <b>CGI:</b> {cgi_n}<br>
+                    <b>Địa chỉ:</b> {addr_n}
+                </div>
+                """
+                folium.Marker(
+                    [lat_n, lon_n], 
+                    popup=folium.Popup(noi_dung_near, max_width=240), 
+                    icon=folium.Icon(color='green', icon='broadcast-tower', prefix='fa')
+                ).add_to(m)
+                folium.PolyLine(locations=[[lat_val, lon_val], [lat_n, lon_n]], color="green", weight=1.5, opacity=0.6, dash_array='5, 5').add_to(m)
+
+        with col_right_map:
+            folium_static(m, height=730, width=None)
+
+        # ==============================================================================
+        # 6. KHU VỰC NẠP DỮ LIỆU HÀNH TRÌNH (TỰ ĐỘNG MAP VỚI CLOUD VÀ VẼ LỘ TRÌNH)
+        # ==============================================================================
+        st.markdown("<hr style='margin-top: 25px; margin-bottom: 15px; border-color: var(--border-color);'>", unsafe_allow_html=True)
+        
+        # Bố trí khung upload siêu gọn nhẹ
+        col_upload_left, col_upload_right, col_empty = st.columns([4, 2, 4])
+        
+        with col_upload_left:
+            uploaded_file = st.file_uploader(
+                "📥 Tải dữ liệu hành trình (Yêu cầu có cột chứa CGI và Thời gian):", 
+                type=["csv", "xlsx"]
+            )
+        
+        with col_upload_right:
+            st.write("<br>", unsafe_allow_html=True)
+            if st.button("🗑️ Xóa Lộ Trình", use_container_width=True, type="secondary"):
+                st.session_state.danh_sach_luu.clear()
+                st.session_state.tram_hien_tai = None
+                st.session_state.ds_gan_nhat.clear()
+                st.rerun()
+
+        # Logic map dữ liệu hành trình thông minh
+        if uploaded_file:
+            try:
+                # Đọc cấu trúc file tải lên
+                if uploaded_file.name.endswith(".csv"):
+                    df_route = pd.read_csv(uploaded_file, dtype=str)
+                else:
+                    df_route = pd.read_excel(uploaded_file, dtype=str)
+                
+                # Quét tìm cột CGI và Thời gian (Cho phép nhận diện linh hoạt các tên cột)
+                cot_cgi = next((col for col in df_route.columns if 'cgi' in str(col).lower()), None)
+                cot_time = next((col for col in df_route.columns if 'thời gian' in str(col).lower() or 'time' in str(col).lower() or 'ngày' in str(col).lower()), None)
+                
+                if not cot_cgi:
+                    st.error("❌ Cấu trúc file không hợp lệ! File của bạn thiếu cột chứa mã 'CGI'.")
+                else:
+                    danh_sach_lo_trinh = []
+                    so_diem_khong_map_duoc = 0
+                    
+                    # Duyệt từng dòng trong file hành trình tải lên
+                    for idx, row in df_route.iterrows():
+                        cgi_raw = str(row[cot_cgi]).strip()
+                        if not cgi_raw or cgi_raw == 'nan': continue
+                        
+                        # Bóc tách CGI (Hỗ trợ định dạng dấu - hoặc _)
+                        parts = re.split(r'[-_]', cgi_raw)
+                        if len(parts) >= 4:
+                            # Định dạng thông thường MCC-MNC-LAC-CELLID
+                            mcc_val, mnc_val, lac_val, cell_val = parts[-4], parts[-3].zfill(2), parts[-2], parts[-1]
+                            
+                            # Tìm kiếm tương đương trong CSDL Cloud
+                            match = df[(df[COT_MCC] == mcc_val) & (df[COT_MNC] == mnc_val) & 
+                                       (df[COT_LAC_TAC] == lac_val) & (df[COT_CELL_ID] == cell_val)]
+                            
+                            if not match.empty:
+                                tram_info = match.iloc[0].copy()
+                                # Nạp thêm thông tin thời gian vào để hiển thị lên bản đồ
+                                if cot_time and pd.notna(row[cot_time]):
+                                    tram_info['Thời gian đo_mapped'] = str(row[cot_time])
+                                danh_sach_lo_trinh.append(tram_info)
+                            else:
+                                so_diem_khong_map_duoc += 1
+
+                    if danh_sach_lo_trinh:
+                        st.session_state.danh_sach_luu = danh_sach_lo_trinh
+                        st.session_state.tram_hien_tai = danh_sach_lo_trinh[0]
+                        st.session_state.ds_gan_nhat.clear()
+                        
+                        msg = f"🎉 Đã ánh xạ và vẽ lộ trình cho {len(danh_sach_lo_trinh)} điểm."
+                        if so_diem_khong_map_duoc > 0:
+                            msg += f" (Bỏ qua {so_diem_khong_map_duoc} điểm CGI không có trong dữ liệu Cloud)."
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error("⚠️ Không có mã CGI nào trong file khớp với Cơ sở dữ liệu Cloud của bạn.")
+                        
+            except Exception as upload_error:
+                st.error(f"❌ Có lỗi phát sinh khi xử lý dữ liệu file: {upload_error}")
+
+    except Exception as e:
+        with col_right_map:
+            st.error(f"❌ Lỗi cấu trúc hoặc xử lý cơ sở dữ liệu: {e}")
