@@ -150,11 +150,20 @@ if not st.session_state.logged_in:
         .stApp, .stMarkdown, p, span, div, label { color: #FFFFFF !important; }
         input { color: #0F172A !important; background-color: #FFFFFF !important; -webkit-text-fill-color: #0F172A !important;}
         div[data-testid="stColumn"] { padding: 0px 4px !important; }
+        
+        /* Thu gọn tối đa khung báo lỗi */
+        div[data-testid="stNotification"] { 
+            padding: 6px 12px !important; 
+            font-size: 12.5px !important; 
+            border-radius: 6px !important;
+            margin-top: 4px !important;
+        }
+        div[data-testid="stNotification"] div { line-height: 1.2 !important; }
         </style>""", 
         unsafe_allow_html=True
     )
     
-    # Thiết kế thanh đăng nhập siêu gọn nằm cố định góc trên bên phải
+    # Cụm đăng nhập siêu nhỏ gọn đặt bên góc phải màn hình
     col_space, col_login_1, col_login_2, col_btn = st.columns([5.5, 1.8, 1.8, 0.9])
     with col_login_1:
         tai_khoan_nhap = st.text_input("Tài khoản", value="", key="username_input", label_visibility="collapsed", placeholder="Tài khoản")
@@ -163,14 +172,21 @@ if not st.session_state.logged_in:
     with col_btn:
         nut_dang_nhap = st.button("Đăng nhập", type="primary", use_container_width=True)
         
-    # Xử lý logic sự kiện khi nhấn nút đăng nhập
+    # Xử lý logic kiểm tra thông tin đăng nhập
     if nut_dang_nhap:
         if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
             st.session_state.logged_in = True
-            st.toast("🔑 Xác thực thành công! Đang tải hệ thống...")
+            st.toast("🔑 Xác thực thành công!")
             st.rerun()
         else:
-            st.error("❌ Sai tài khoản hoặc mật khẩu. Vui lòng thử lại!")
+            st.session_state["loi_dang_nhap"] = True
+
+    # Định vị dải thông báo lỗi: Thu gọn khớp chiều rộng và nằm ngay dưới chân cụm đăng nhập
+    if st.session_state.get("loi_dang_nhap", False):
+        col_space_err, col_err = st.columns([5.5, 4.5])
+        with col_err:
+            st.error("❌ Tài khoản hoặc mật khẩu không chính xác.")
+            st.session_state["loi_dang_nhap"] = False
 
     st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'new-password'));</script>", unsafe_allow_html=True)
 
