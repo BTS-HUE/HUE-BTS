@@ -20,7 +20,6 @@ TAI_KHOAN_CHUAN = st.secrets["auth"]["tai_khoan_chuan"]
 MAT_KHAU_CHUAN = st.secrets["auth"]["mat_khau_chuan"]
 SHEET_ID = st.secrets["database"]["sheet_id"]
 
-# Kiểm tra cơ chế đăng nhập tự động qua Token URL hoặc đồng bộ phiên làm việc
 if "logged_in" not in st.session_state:
     if st.query_params.get("auth_token") == TOKEN_XAC_THUC:
         st.session_state.logged_in = True
@@ -28,16 +27,14 @@ if "logged_in" not in st.session_state:
     else:
         st.session_state.logged_in = False
 
-# Thiết lập giá trị mặc định cho bộ nhớ tạm (Session State)
 st.session_state.setdefault("danh_sach_luu", [])
 st.session_state.setdefault("tram_hien_tai", None)
 st.session_state.setdefault("ds_gan_nhat", [])
 
-# Tên các cột quy chuẩn trong cơ sở dữ liệu để tái sử dụng toàn bài
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & CSS OVERRIDES (UI/UX INJECTION)
+# 2. TỐI ƯU GIAO DIỆN & ÉP BUỘC CSS GRID 50-50 (HARDCORE CSS GRID OVERRIDES)
 # ==============================================================================
 st.markdown(
     """
@@ -51,12 +48,42 @@ st.markdown(
     .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
-    /* 2.2. Thu gọn tối giản khung kéo thả File Uploader */
+    /* 2.2. KHÓA CỨNG CSS GRID: Ép buộc Form tìm kiếm chia đúng 2 cột ngang 50-50 bất kể màn hình to nhỏ */
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+    }
+
+    /* 2.3. KHÓA CỨNG CSS GRID: Ép buộc hàng Đăng nhập chia đều tỉ lệ trên điện thoại */
+    .khu-vuc-dang-nhap div[data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    .khu-vuc-dang-nhap div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+    }
+    /* Cho nút Đăng nhập kéo dài toàn độ rộng bên dưới Grid trên Mobile */
+    @media (max-width: 768px) {
+        .khu-vuc-dang-nhap div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-of-type(3) {
+            grid-column: span 2 !important;
+        }
+    }
+
+    /* 2.4. Thu gọn tối giản khung kéo thả File Uploader */
     [data-testid="stFileUploader"] section { padding: 8px !important; min-height: 40px !important; background-color: var(--secondary-background-color) !important; }
     [data-testid="stFileUploader"] small { display: none !important; }
     [data-testid="stFileUploadDropzone"] div { margin: 0px !important; padding: 2px !important; }
 
-    /* 2.3. Tối ưu hóa màu sắc hiển thị cho chế độ Sáng/Tối (Light/Dark Mode) */
+    /* 2.5. Tối ưu hóa màu sắc hiển thị cho chế độ Sáng/Tối */
     label, p, span, summary, div { color: var(--text-color) !important; }
     .stExpander {
         background-color: var(--background-color) !important;
@@ -80,7 +107,7 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. Thiết lập khung bảng điều khiển lơ lửng trên bản đồ (Floating Panel) */
+    /* 2.6. Thiết lập khung bảng điều khiển lơ lửng trên bản đồ (Floating Panel) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
@@ -89,9 +116,9 @@ st.markdown(
         position: absolute !important; top: 15px !important; left: 15px !important; width: 320px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.5. Tối ưu hóa hiển thị đáp ứng trên điện thoại/máy tính bảng (Mobile Responsive) */
+    /* 2.7. Responsive bổ sung cho Panel trên Mobile */
     @media (max-width: 768px) {
-        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { top: 10px !important; left: 10px !important; width: 230px !important; max-width: 85% !important; }
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { top: 10px !important; left: 10px !important; width: 240px !important; max-width: 90% !important; }
         .stExpander summary p { font-size: 13px !important; }
         .stExpander label p { font-size: 11px !important; }
         .stExpander input { font-size: 12px !important; padding: 4px 8px !important; }
@@ -107,14 +134,12 @@ st.markdown(
 # 3. PHÂN HỆ THUẬT TOÁN HÌNH HỌC KHÔNG GIAN & XỬ LÝ DATA (CORE ENGINE)
 # ==============================================================================
 def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
-    """Tính khoảng cách đường chim bay giữa 2 điểm GPS theo công thức Haversine"""
     r_lat1, r_lon1, r_lat2, r_lon2 = map(math.radians, [float(lat1), float(lon1), float(lat2), float(lon2)])
     a = math.sin((r_lat2 - r_lat1) / 2)**2 + math.cos(r_lat1) * math.cos(r_lat2) * math.sin((r_lon2 - r_lon1) / 2)**2
     return 2 * math.asin(math.sqrt(a)) * 6371.0 
 
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
-    """Tải và đồng bộ dữ liệu từ Google Sheets Cloud"""
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
     data = pd.read_csv(URL, dtype=str)
     data.columns = data.columns.str.strip()
@@ -125,7 +150,6 @@ def tai_co_so_du_lieu():
     return data
 
 def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
-    """Truy xuất động linh hoạt giá trị của cột theo tập tên đồng nghĩa"""
     tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
     for k in row.index:
         if str(k).lower() in tap_ten_goi:
@@ -147,14 +171,16 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
-    # Cụm ô nhập dữ liệu đăng nhập siêu nhỏ gọn đặt góc trên bên phải màn hình
-    col_space, col_login_1, col_login_2, col_btn = st.columns([5.5, 1.8, 1.8, 0.9])
+    # Bọc khu vực đăng nhập vào div class để CSS Grid xử lý ép dòng ngang 50-50
+    st.markdown('<div class="khu-vuc-dang-nhap">', unsafe_allow_html=True)
+    col_login_1, col_login_2, col_btn = st.columns([4.5, 4.5, 1.0])
     with col_login_1:
         tai_khoan_nhap = st.text_input("Tài khoản", value="", key="username_input", label_visibility="collapsed", placeholder="Tài khoản")
     with col_login_2:
         mat_khau_nhap = st.text_input("Mật khẩu", type="password", key="password_input", label_visibility="collapsed", placeholder="Mật khẩu")
     with col_btn:
         nut_dang_nhap = st.button("Đăng nhập", type="primary", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
         
     if nut_dang_nhap:
         if tai_khoan_nhap == TAI_KHOAN_CHUAN and mat_khau_nhap == MAT_KHAU_CHUAN:
@@ -165,10 +191,8 @@ if not st.session_state.logged_in:
             st.session_state["loi_dang_nhap"] = True
 
     if st.session_state.get("loi_dang_nhap", False):
-        col_space_err, col_err = st.columns([5.5, 4.5])
-        with col_err:
-            st.error("❌ Tài khoản hoặc mật khẩu không chính xác.")
-            st.session_state["loi_dang_nhap"] = False
+        st.error("❌ Tài khoản hoặc mật khẩu không chính xác.")
+        st.session_state["loi_dang_nhap"] = False
 
     st.markdown("<script>window.parent.document.querySelectorAll('input').forEach(i => i.setAttribute('autocomplete', 'new-password'));</script>", unsafe_allow_html=True)
 
@@ -189,7 +213,6 @@ if not st.session_state.logged_in:
 # 5. KHÔNG GIAN TRỰC QUAN HÓA BẢN ĐỒ & TRUY VẤN (MAIN MAP PANEL)
 # ==============================================================================
 else:
-    # 5.1. Thanh Tiêu Đề & Nút Đăng Xuất Hệ Thống
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
         st.markdown(
@@ -209,17 +232,17 @@ else:
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: var(--border-color);'>", unsafe_allow_html=True)
 
-    # Khởi tạo khung hiển thị chia cột Left-Panel và Right-Panel
     col_left_search, col_right_map = st.columns([2.4, 7.6])
 
     try:
         df = tai_co_so_du_lieu()
-        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5  # Điểm tọa độ trung tâm mặc định
+        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5 
 
-        # 5.2. XỬ LÝ KHUNG TÌM KIẾM & NGHIỆP VỤ (LEFT PANEL)
+        # 5.2. XỬ LÝ KHUNG TÌM KIẾM
         with col_left_search:
             with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
+                    # Khóa cứng hiển thị 2 ô nhập trên một dòng ngang bằng cấu trúc Grid đã định nghĩa ở mục 2.2
                     col_f1, col_f2 = st.columns(2)
                     with col_f1: f1 = st.text_input("Mã Quốc gia:", key="mcc_in", placeholder="MCC").strip()
                     with col_f2: f2 = st.text_input("Mã Mạng:", key="mnc_in", placeholder="MNC").strip()
@@ -248,7 +271,6 @@ else:
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ tham số!")
 
-            # Xử lý các nút tác vụ khi có trạm đang được định vị
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
@@ -272,7 +294,6 @@ else:
                         st.session_state.ds_gan_nhat = []
                         st.toast("⚠️ Không có dữ liệu lân cận.")
             
-            # Hiển thị danh sách các trạm lân cận phân tích được
             if st.session_state.tram_hien_tai is not None and st.session_state.ds_gan_nhat:
                 with st.expander("📡 TRẠM BTS GẦN NHẤT", expanded=True):
                     for idx, tram_near in enumerate(st.session_state.ds_gan_nhat):
@@ -294,7 +315,6 @@ else:
 
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
-            # Tính toán thông số độ dài cung đường/lộ trình
             if so_luong_diem >= 2:
                 with st.expander("📏 KHOẢNG CÁCH / LỘ TRÌNH", expanded=False):
                     tong_khoang_cach = 0.0
@@ -305,7 +325,6 @@ else:
                         st.markdown(f"<div style='font-size: 13px; margin-bottom: 6px;'>🔹 <b>Trạm {p1[COT_CELL_ID]}</b> ➡️ <b>Trạm {p2[COT_CELL_ID]}</b>: <code>{kc_chi_tiet:.2f} km</code></div>", unsafe_allow_html=True)
                     st.info(f"Tổng chiều dài tuyến đường: **{tong_khoang_cach:.2f} km**")
 
-            # Quản lý danh sách điểm ghim hiện tại
             if so_luong_diem > 0:
                 with st.expander(f"📍 Dữ liệu lộ trình/điểm ghim ({so_luong_diem})", expanded=False):
                     index_can_xoa = None
@@ -329,7 +348,7 @@ else:
                         st.session_state.ds_gan_nhat.clear()
                         st.rerun()
 
-        # 5.3. XỬ LÝ LỚP HỘI HỌA ĐỒ HỌA BẢN ĐỒ BẢN ĐỒ LỚN (RIGHT PANEL)
+        # 5.3. XỬ LÝ ĐỒ HỌA BẢN ĐỒ LỚN (RIGHT PANEL)
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 14
         elif so_luong_diem > 0:
@@ -342,7 +361,6 @@ else:
 
         toa_do_vung = []
 
-        # Vẽ chuỗi điểm ghim lộ trình
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -358,7 +376,6 @@ else:
         if len(toa_do_vung) >= 2:
             folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
 
-        # Vẽ điểm trạm truy vấn chính xác hiện tại và sơ đồ kết nối lân cận
         if st.session_state.tram_hien_tai is not None:
             lat_val, lon_val = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO])
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
