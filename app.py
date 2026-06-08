@@ -80,59 +80,63 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. ĐÓNG KHUNG CSS GRID: CỐ ĐỊNH 2 HÀNG NGANG TÌM KIẾM (CHỐNG SẬP/VỠ TRÊN DI ĐỘNG) */
-    div[data-testid="stForm"] {
-        border: none !important;
-        padding: 0px !important;
-    }
+    /* 2.4. Đóng khung CSS Grid cố định 2 hàng ngang */
+    div[data-testid="stForm"] { border: none !important; padding: 0px !important; }
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important; /* Ép chia đôi 2 ô trên 1 hàng ngang */
-        gap: 8px !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
         margin-bottom: 0px !important;
     }
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important; /* Chống phình ô dữ liệu */
-        flex: none !important;
-        padding: 0px !important;
+        width: 100% !important; max-width: 100% !important; min-width: 0 !important; flex: none !important; padding: 0px !important;
     }
-    div[data-testid="stForm"] .stTextInput {
-        width: 100% !important;
-        margin: 0px !important;
-    }
+    div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; }
     div[data-testid="stForm"] label p {
-        font-size: 12px !important;
+        font-size: 13px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
-        text-overflow: ellipsis !important; /* Tự thu gọn nhãn nếu quá dài tránh lệch hàng */
+        text-overflow: ellipsis !important;
     }
 
-    /* 2.5. Thiết lập khung bảng điều khiển lơ lửng trên bản đồ (Floating Panel) */
+    /* 2.5. Thiết lập khung bảng điều khiển lơ lửng trên bản đồ (Desktop) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-        position: absolute !important; top: 15px !important; left: 15px !important; width: 320px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
+        position: absolute !important; top: 15px !important; left: 15px !important; width: 330px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. Tối ưu hóa hiển thị đáp ứng siêu mịn trên thiết bị di động (Mobile Responsive) */
-    @media (max-width: 768px) {
+    /* 2.6. TỐI ƯU ĐÁP ỨNG CHO MÁY TÍNH BẢNG & ĐIỆN THOẠI (SỬA LỖI MẤT CHỮ Ô NHẬP) */
+    @media (max-width: 1024px) {
+        /* Nới rộng Panel từ 250px lên hẳn 310px trên Tablet để các ô tìm kiếm có không gian kéo dài ra */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            top: 10px !important; 
-            left: 10px !important; 
-            width: 250px !important; /* Tối ưu độ rộng panel lơ lửng trên mobile */
-            max-width: 88% !important; 
+            top: 12px !important; 
+            left: 12px !important; 
+            width: 310px !important; 
+            max-width: 90% !important; 
         }
-        .stExpander > div { padding: 8px !important; } /* Thu nhỏ padding ruột expander */
-        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 6px !important; } /* Thu hẹp khoảng cách ô nhập */
-        
-        div[data-testid="stForm"] label p { font-size: 11px !important; }
-        .stExpander summary p { font-size: 13px !important; }
-        .stExpander input { font-size: 12px !important; padding: 4px 6px !important; }
-        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 13px !important; padding: 4px !important; margin-top: 4px !important; }
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 8px !important; }
+        div[data-testid="stForm"] label p { font-size: 11.5px !important; } /* Thu nhỏ nhẹ chữ tiêu đề để vừa khít ô */
+        .stExpander input { 
+            font-size: 12px !important; 
+            padding: 4px 6px !important; /* Giảm bớt khoảng trống thừa bên trong ô nhập */
+        }
+        .stExpander > div { padding: 10px !important; }
+    }
+
+    @media (max-width: 480px) {
+        /* Tối ưu riêng cho các dòng điện thoại màn hình cực nhỏ */
+        div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
+            width: 275px !important; 
+            max-width: 92% !important;
+        }
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 6px !important; }
+        div[data-testid="stForm"] label p { font-size: 10.5px !important; }
+        .stExpander input { padding: 4px 4px !important; font-size: 11.5px !important; }
+        .stExpander summary p { font-size: 12.5px !important; }
+        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 12.5px !important; padding: 4px !important; }
         .stExpander { border-radius: 10px !important; box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important; backdrop-filter: blur(8px) !important; }
     }
     </style>
@@ -257,12 +261,10 @@ else:
         with col_left_search:
             with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
-                    # Hàng ngang cố định thứ nhất
                     col_f1, col_f2 = st.columns(2)
                     with col_f1: f1 = st.text_input("Mã Quốc gia:", key="mcc_in", placeholder="MCC").strip()
                     with col_f2: f2 = st.text_input("Mã Mạng:", key="mnc_in", placeholder="MNC").strip()
                     
-                    # Hàng ngang cố định thứ hai
                     col_f3, col_f4 = st.columns(2)
                     with col_f3: f3 = st.text_input("Mã Vùng:", key="lac_in", placeholder="LAC/TAC").strip()
                     with col_f4: f4 = st.text_input("Cell ID:", key="cell_in", placeholder="Cell ID").strip()
