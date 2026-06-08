@@ -3,7 +3,6 @@ import pandas as pd
 import folium
 from streamlit_folium import folium_static
 import math
-import re
 
 # ==============================================================================
 # 1. KIẾN TRÚC NỀN TẢNG & QUẢN LÝ PHÂN HỆ PHIÊN TRUY CẬP (SESSION MANAGEMENT)
@@ -32,11 +31,8 @@ st.session_state.setdefault("danh_sach_luu", [])
 st.session_state.setdefault("tram_hien_tai", None)
 st.session_state.setdefault("ds_gan_nhat", [])
 
-# Tên các cột quy chuẩn trong cơ sở dữ liệu
-COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
-
 # ==============================================================================
-# 2. KHỞI TẠO LỚP ĐỊNH DẠNG GIAO DIỆN ĐÁP ỨNG TOÀN DIỆN (UNIVERSAL UI/UX OVERRIDES)
+# 2. KHỞI TẠO LỚP ĐỊNH DẠNG GIAO DIỆN ĐÁP ỨNG NÂNG CAO (UI/UX STYLE Overrides)
 # ==============================================================================
 st.markdown(
     """
@@ -49,11 +45,6 @@ st.markdown(
     .block-container { padding: 0.6rem 1rem 0rem 1rem !important; max-width: 100% !important; }
     .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
-
-    /* Thu gọn tối giản khung kéo thả File Uploader bên dưới */
-    [data-testid="stFileUploader"] section { padding: 8px !important; min-height: 40px !important; background-color: var(--secondary-background-color) !important; }
-    [data-testid="stFileUploader"] small { display: none !important; }
-    [data-testid="stFileUploadDropzone"] div { margin: 0px !important; padding: 2px !important; }
 
     /* 2.2. ĐỒNG BỘ PALETTE MÀU: Đảm bảo tương thích hiển thị đồng nhất giữa Light/Dark Mode */
     label, p, span, summary, div { color: var(--text-color) !important; }
@@ -79,53 +70,46 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.3. CẤU TRÚC LỚP LƠ LỬNG (FLOATING PANEL): Mở rộng từ 320px lên 360px để hiển thị trọn vẹn chữ */
+    /* 2.3. CẤU TRÚC LỚP LƠ LỬNG (FLOATING PANEL): Định hình khung điều hướng không gian GIS Map */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-        position: absolute !important; top: 15px !important; left: 15px !important; width: 360px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
+        position: absolute !important; top: 15px !important; left: 15px !important; width: 320px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.4. 🚀 ĐỊNH DẠNG CSS GRID CHO Ô NHẬP LIỆU: Áp dụng chung cho tất cả các loại màn hình để sửa lỗi tràn chữ */
-    div[data-testid="stForm"] { border: none !important; padding: 0px !important; }
+    /* 2.4. 🚀 SỬ DỤNG CSS GRID TOÀN CỤC: Áp dụng lưới chia ô cho Form Tìm kiếm trên mọi thiết bị */
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important; /* Chia 2 ô bằng nhau tuyệt đối */
-        gap: 10px !important;
-        width: 100% !important;
+        grid-template-columns: 1fr 1fr !important; /* Lưới 2 ô bằng nhau tuyệt đối */
+        gap: 8px !important;
+        width: 100% !important; /* Khóa chặt chiều rộng vào khung chứa */
         box-sizing: border-box !important;
-        margin-bottom: 0px !important;
+        margin-bottom: 4px !important;
     }
+    /* Ép các cột con (column của Streamlit) vừa khít với lưới Grid */
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 100% !important;
         min-width: 0 !important;
-        flex: none !important;
-        padding: 0 !important;
+        padding: 0 !important; /* Loại bỏ padding thừa gây tràn viền */
     }
+    /* Ép ô nhập liệu thu mình lại bên trong giới hạn của cột */
     div[data-testid="stForm"] input {
-        font-size: 13.5px !important;
-        padding: 6px 8px !important;
+        font-size: 13px !important;
+        padding: 6px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        height: 35px !important;
-    }
-    div[data-testid="stForm"] label p {
-        font-size: 13px !important;
-        white-space: nowrap !important; /* Giữ nguyên chữ trên một hàng */
-        overflow: visible !important;
-        text-overflow: clip !important;
+        height: 34px !important;
     }
 
-    /* 2.5. ĐÁP ỨNG THIẾT BỊ DI ĐỘNG NHỎ (MOBILE RESPONSIVE) */
+    /* 2.5. ĐÁP ỨNG THIẾT BỊ DI ĐỘNG (MOBILE RESPONSIVE) - FIX TRÀN KHUNG */
     @media (max-width: 768px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-            top: 10px !important; left: 10px !important; width: 310px !important; max-width: 92% !important;
+            top: 10px !important; left: 10px !important; width: 230px !important; max-width: 85% !important;
         }
         .stExpander summary p { font-size: 13px !important; }
-        div[data-testid="stForm"] label p { font-size: 12px !important; }
-        div[data-testid="stForm"] input { font-size: 12.5px !important; height: 32px !important; padding: 4px 6px !important; }
+        .stExpander label p { font-size: 11px !important; }
         div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 13px !important; padding: 4px !important; }
         .stExpander { border-radius: 10px !important; box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important; backdrop-filter: blur(8px) !important; }
     }
@@ -229,6 +213,8 @@ else:
 
     try:
         df = tai_co_so_du_lieu()
+        
+        COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
         vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5
 
         with col_left_search:
@@ -274,8 +260,8 @@ else:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
                 if st.button("📌 Gắn thẻ tọa độ trạm này", type="primary", use_container_width=True):
-                    if len(st.session_state.danh_sach_luu) >= 50:
-                        st.toast("❌ Đã đạt giới hạn tối đa 50 điểm ghim!")
+                    if len(st.session_state.danh_sach_luu) >= 10:
+                        st.toast("❌ Đã đạt giới hạn tối đa 10 điểm ghim!")
                     elif not any(item[COT_CELL_ID] == cell_id_hien_tai for item in st.session_state.danh_sach_luu):
                         st.session_state.danh_sach_luu.append(st.session_state.tram_hien_tai)
                         st.toast(f"Đã lưu tọa độ trạm {cell_id_hien_tai}")
@@ -311,8 +297,8 @@ else:
                             st.markdown(f"<div style='font-size:11px; opacity:0.8;'>Đ/C: {addr_near}</div>", unsafe_allow_html=True)
                         with col_near_pin:
                             if st.button("Ghim", key=f"pin_near_{tram_near[COT_CELL_ID]}_{idx}", use_container_width=True):
-                                if len(st.session_state.danh_sach_luu) >= 50:
-                                    st.toast("❌ Đã đạt giới hạn tối đa 50 điểm ghim!")
+                                if len(st.session_state.danh_sach_luu) >= 10:
+                                    st.toast("❌ Đã đạt giới hạn tối đa 10 điểm ghim!")
                                 elif not any(item[COT_CELL_ID] == tram_near[COT_CELL_ID] for item in st.session_state.danh_sach_luu):
                                     st.session_state.danh_sach_luu.append(pd.Series(tram_near))
                                     st.toast(f"Đã ghim trạm {tram_near[COT_CELL_ID]}")
@@ -325,7 +311,7 @@ else:
             
             # 5.3. TÍNH TOÁN CÁC CHỈ SỐ HÌNH HỌC HẠ TẦNG (KHOẢNG CÁCH NỐI TIẾP)
             if so_luong_diem >= 2:
-                with st.expander("📏 KHOẢNG CÁCH / LỘ TRÌNH", expanded=False):
+                with st.expander("📏 KHOẢNG CÁCH", expanded=False):
                     tong_khoang_cach = 0.0
                     for i in range(so_luong_diem - 1):
                         p1 = st.session_state.danh_sach_luu[i]
@@ -344,18 +330,16 @@ else:
                             unsafe_allow_html=True
                         )
                     
-                    st.info(f"Tổng chiều dài tuyến đường: **{tong_khoang_cach:.2f} km**")
+                    st.info(f"Tổng chiều dài tuyến (theo thứ tự ghim): **{tong_khoang_cach:.2f} km**")
 
             # 5.4. ĐIỀU KHIỂN DANH SÁCH TOẠ ĐỘ GHIM LƯU TRỮ
             if so_luong_diem > 0:
-                with st.expander(f"📍 Dữ liệu điểm ghim ({so_luong_diem}/50)", expanded=False):
+                with st.expander(f"📍 Dữ liệu điểm ghim ({so_luong_diem}/10)", expanded=False):
                     index_can_xoa = None
                     for idx, tram_luu in enumerate(st.session_state.danh_sach_luu):
                         col_cell_name, col_del_btn = st.columns([7, 3])
                         with col_cell_name:
-                            thoi_gian_hien_thi = truy_xuat_du_lieu_cot(tram_luu, ['Thời gian đo_mapped', 'Thời gian'])
-                            suffix = f" ({thoi_gian_hien_thi})" if thoi_gian_hien_thi != "Không có dữ liệu" else ""
-                            st.markdown(f"<div style='font-size:12px; padding-top:5px;'>ID: {tram_luu[COT_CELL_ID]}{suffix}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='font-size:12px; padding-top:5px;'>ID: {tram_luu[COT_CELL_ID]}</div>", unsafe_allow_html=True)
                         with col_del_btn:
                             if st.button("Hủy", key=f"del_{tram_luu[COT_CELL_ID]}_{idx}", use_container_width=True):
                                 index_can_xoa = idx
@@ -370,7 +354,7 @@ else:
                         st.session_state.ds_gan_nhat.clear()
                         st.rerun()
 
-        # 5.5. KHỞI TẠO VÀ PHÂN LỚP ĐỒ HỌA BẢN ĐỒ LỚN (MAP CANVAS LAYERS)
+        # 5.5. KHỔI TẠO VÀ PHÂN LỚP ĐỒ HỌA BẢN ĐỒ LỚN (MAP CANVAS LAYERS)
         if st.session_state.tram_hien_tai is not None:
             vi_do_xem, kinh_do_xem, muc_zoom = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO]), 14
         elif so_luong_diem > 0:
@@ -391,14 +375,12 @@ else:
             
             cgi_l = truy_xuat_du_lieu_cot(tram_luu, ['CGI', 'cgi'])
             addr_l = truy_xuat_du_lieu_cot(tram_luu, ['Địa chỉ', 'dia chi', 'Address'])
-            thoi_gian_l = truy_xuat_du_lieu_cot(tram_luu, ['Thời gian đo_mapped'])
-            html_thoi_gian = f"<b>Thời gian:</b> <span style='color:red;'>{thoi_gian_l}</span><br>" if thoi_gian_l != "Không có dữ liệu" else ""
+            cell_l = tram_luu[COT_CELL_ID]
 
             noi_dung_luu = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
-                <b style='color: #0275d8;'>📌 THÔNG TIN ĐIỂM LỘ TRÌNH [{index+1}]</b><br>
-                {html_thoi_gian}
-                <b>Cell ID:</b> {tram_luu[COT_CELL_ID]}<br>
+                <b style='color: #0275d8;'>📌 THÔNG TIN TRẠM ĐÃ GHIM [{index+1}]</b><br>
+                <b>Cell ID:</b> {cell_l}<br>
                 <b>CGI:</b> {cgi_l}<br>
                 <b>Tọa độ:</b> {lat_l}, {lon_l}<br>
                 <b>Địa chỉ:</b> {addr_l}
@@ -416,13 +398,10 @@ else:
             dia_chi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Địa chỉ', 'dia chi', 'Address'])
             cell_val = st.session_state.tram_hien_tai[COT_CELL_ID]
             lat_val, lon_val = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO])
-            thoi_gian_curr = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['Thời gian đo_mapped'])
-            html_time_curr = f"<b>Thời gian:</b> <span style='color:red;'>{thoi_gian_curr}</span><br>" if thoi_gian_curr != "Không có dữ liệu" else ""
 
             noi_dung_label = f"""
             <div style='font-family: Arial, sans-serif; font-size: 13px; width: 220px; color: #333333; line-height: 1.5;'>
                 <b style='color: #D9534F;'>🎯 THÔNG TIN TRẠM BTS: {cell_val}</b><br>
-                {html_time_curr}
                 <b>CGI:</b> {cgi_val}<br>
                 <b>Tọa độ:</b> {lat_val}, {lon_val}<br>
                 <b>Địa chỉ:</b> {dia_chi_val}
@@ -455,67 +434,6 @@ else:
 
         with col_right_map:
             folium_static(m, height=730, width=None)
-
-        # ==============================================================================
-        # 6. PHÂN HỆ PHÂN TÍCH FILE HÀNH TRÌNH TỰ ĐỘNG (TRAJECTORY IMPORT ENGINE)
-        # ==============================================================================
-        st.markdown("<hr style='margin-top: 25px; margin-bottom: 15px; border-color: var(--border-color);'>", unsafe_allow_html=True)
-        col_upload_left, col_upload_right, _ = st.columns([4, 2, 4])
-        
-        with col_upload_left:
-            uploaded_file = st.file_uploader("📥 Tải dữ liệu hành trình (Yêu cầu có cột chứa CGI và Thời gian):", type=["csv", "xlsx"])
-        
-        with col_upload_right:
-            st.write("<br>", unsafe_allow_html=True)
-            if st.button("🗑️ Xóa Lộ Trình", use_container_width=True, type="secondary"):
-                st.session_state.danh_sach_luu.clear()
-                st.session_state.tram_hien_tai = None
-                st.session_state.ds_gan_nhat.clear()
-                st.rerun()
-
-        if uploaded_file:
-            try:
-                df_route = pd.read_csv(uploaded_file, dtype=str) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file, dtype=str)
-                cot_cgi = next((col for col in df_route.columns if 'cgi' in str(col).lower()), None)
-                cot_time = next((col for col in df_route.columns if any(x in str(col).lower() for x in ['thời gian', 'time', 'ngày'])), None)
-                
-                if not cot_cgi:
-                    st.error("❌ Cấu trúc file không hợp lệ! File của bạn thiếu cột chứa mã 'CGI'.")
-                else:
-                    danh_sach_lo_trinh = []
-                    so_diem_khong_map_duoc = 0
-                    
-                    for idx, row in df_route.iterrows():
-                        cgi_raw = str(row[cot_cgi]).strip()
-                        if not cgi_raw or cgi_raw == 'nan': continue
-                        
-                        parts = re.split(r'[-_]', cgi_raw)
-                        if len(parts) >= 4:
-                            mcc_val, mnc_val, lac_val, cell_val = parts[-4], parts[-3].zfill(2), parts[-2], parts[-1]
-                            match = df[(df[COT_MCC] == mcc_val) & (df[COT_MNC] == mnc_val) & (df[COT_LAC_TAC] == lac_val) & (df[COT_CELL_ID] == cell_val)]
-                            
-                            if not match.empty:
-                                tram_info = match.iloc[0].copy()
-                                if cot_time and pd.notna(row[cot_time]):
-                                    tram_info['Thời gian đo_mapped'] = str(row[cot_time])
-                                danh_sach_lo_trinh.append(tram_info)
-                            else:
-                                so_diem_khong_map_duoc += 1
-
-                    if danh_sach_lo_trinh:
-                        st.session_state.danh_sach_luu = danh_sach_lo_trinh
-                        st.session_state.tram_hien_tai = danh_sach_lo_trinh[0]
-                        st.session_state.ds_gan_nhat.clear()
-                        
-                        msg = f"🎉 Đã ánh xạ và vẽ lộ trình cho {len(danh_sach_lo_trinh)} điểm."
-                        if so_diem_khong_map_duoc > 0: msg += f" (Bỏ qua {so_diem_khong_map_duoc} điểm không trùng khớp Cloud)."
-                        st.success(msg)
-                        st.rerun()
-                    else:
-                        st.error("⚠️ Không có mã CGI nào trong file khớp với Cơ sở dữ liệu Cloud.")
-                        
-            except Exception as upload_error:
-                st.error(f"❌ Có lỗi phát sinh khi xử lý dữ liệu file: {upload_error}")
 
     except Exception as e:
         with col_right_map:
