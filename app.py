@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU RESPONSIVE CHỐNG TRÀN - GIỮ NGUYÊN 2 HÀNG NGANG (UI/UX INJECTION)
+# 2. SỬA LỖI TRÀN MÀN HÌNH - KHÓA TỶ LỆ HÌNH HỌC TUYỆT ĐỐI (UI/UX FIX)
 # ==============================================================================
 st.markdown(
     """
@@ -80,10 +80,10 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. ĐỊNH DẠNG LAYOUT 2 Ô TRÊN 1 HÀNG (MẶC ĐỊNH CHO TẤT CẢ THIẾT BỊ) */
-    div[data-testid="stForm"] { width: 100% !important; box-sizing: border-box !important; }
+    /* 2.4. KHÓA CỐ ĐỊNH LAYOUT TOÁN HỌC CHỐNG TRÀN VIỀN */
+    div[data-testid="stForm"] { width: 100% !important; }
+    div[data-testid="stForm"] * { box-sizing: border-box !important; } /* Ép mọi padding co cụm vào trong, cấm nở ra ngoài */
     
-    /* Ép cấu trúc luôn nằm ngang bất kể độ rộng màn hình */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -94,12 +94,12 @@ st.markdown(
         margin-bottom: 4px !important;
     }
     
-    /* Khóa cứng tỷ lệ mỗi ô chiếm chính xác 50% */
+    /* PC: Chia đôi chuẩn xác 50% trừ đi một nửa khoảng cách gap (8px / 2 = 4px) */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 50% !important; 
-        max-width: 50% !important; 
-        min-width: 50% !important; 
-        flex: 0 0 50% !important; 
+        width: calc(50% - 4px) !important; 
+        max-width: calc(50% - 4px) !important; 
+        min-width: calc(50% - 4px) !important; 
+        flex: 0 0 calc(50% - 4px) !important; 
         padding: 0px !important;
     }
     
@@ -120,7 +120,6 @@ st.markdown(
         padding: 6px 6px !important; 
         height: 36px !important; 
         width: 100% !important;
-        box-sizing: border-box !important;
     }
 
     /* 2.5. LỚP LƠ LỬNG BẢN ĐỒ (MẶC ĐỊNH PC) */
@@ -135,36 +134,40 @@ st.markdown(
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. ĐẶC TRỊ CHỐNG TRÀN CHO ĐIỆN THOẠI (MÀN HÌNH NHỎ) */
+    /* 2.6. ĐẶC TRỊ TUYỆT ĐỐI CHỐNG TRÀN CHO ĐIỆN THOẠI */
     @media (max-width: 768px) {
-        /* Cho phép hộp tìm kiếm tự co giãn linh hoạt theo tỷ lệ màn hình để không bao giờ bị tràn */
+        /* Ép Panel tìm kiếm co giãn theo màn hình thực tế, cách đều 2 lề bên đúng 10px */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 92% !important; 
-            max-width: 290px !important; /* Ngăn không cho quá to trên các máy màn hình rộng */
+            width: calc(100% - 20px) !important; 
+            max-width: 330px !important; /* Giới hạn để không bị quá to trên máy tính bảng nhỏ */
             top: 10px !important;
             left: 10px !important;
         }
         
-        /* Thu nhỏ khoảng cách giữa 2 ô để tiết kiệm diện tích */
+        /* Bóp nhỏ khoảng cách ô trên di động xuống 4px */
         html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
             gap: 4px !important;
             margin-bottom: 2px !important;
         }
         
-        /* Thu nhỏ chữ tiêu đề nhãn để không bị tràn chữ */
+        /* Điện thoại: Cân bằng lại kích thước trừ khoảng cách gap mới (4px / 2 = 2px) */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            width: calc(50% - 2px) !important; 
+            max-width: calc(50% - 2px) !important; 
+            min-width: calc(50% - 2px) !important; 
+            flex: 0 0 calc(50% - 2px) !important; 
+        }
+        
+        /* Thu nhỏ nhẹ font chữ và chiều cao để nội dung nằm gọn lọt lòng màn hình */
         html body div[data-testid="stForm"] label p {
             font-size: 11px !important; 
             letter-spacing: -0.3px !important;
         }
-        
-        /* Thu nhỏ ô nhập dữ liệu một chút để ôm khít màn hình di động */
         html body div[data-testid="stForm"] input { 
-            font-size: 12px !important; 
-            height: 30px !important;
-            padding: 4px 4px !important;
+            font-size: 12.5px !important; 
+            height: 32px !important;
+            padding: 4px 6px !important;
         }
-        
-        /* Thu nhỏ nút bấm Tìm Kiếm */
         div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
             padding: 4px !important;
             font-size: 13px !important;
@@ -219,7 +222,6 @@ if not st.session_state.logged_in:
         unsafe_allow_html=True
     )
     
-    # Cụm ô nhập dữ liệu đăng nhập siêu nhỏ gọn đặt góc trên bên phải màn hình
     col_space, col_login_1, col_login_2, col_btn = st.columns([5.5, 1.8, 1.8, 0.9])
     with col_login_1:
         tai_khoan_nhap = st.text_input("Tài khoản", value="", key="username_input", label_visibility="collapsed", placeholder="Tài khoản")
@@ -261,7 +263,6 @@ if not st.session_state.logged_in:
 # 5. KHÔNG GIAN TRỰC QUAN HÓA BẢN ĐỒ & TRUY VẤN (MAIN MAP PANEL)
 # ==============================================================================
 else:
-    # 5.1. Thanh Tiêu Đề & Nút Đăng Xuất Hệ Thống
     col_main_title, col_logout_layout = st.columns([8.5, 1.5])
     with col_main_title:
         st.markdown(
@@ -281,14 +282,12 @@ else:
 
     st.markdown("<hr style='margin-top: 5px; margin-bottom: 10px; border-color: var(--border-color);'>", unsafe_allow_html=True)
 
-    # Đặt tỷ lệ cột tối ưu để chứa thanh điều khiển nổi rộng rãi
     col_left_search, col_right_map = st.columns([3.1, 6.9])
 
     try:
         df = tai_co_so_du_lieu()
-        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5  # Điểm tọa độ trung tâm mặc định
+        vi_do_xem, kinh_do_xem, muc_zoom = 16.047079, 108.206230, 5 
 
-        # 5.2. XỬ LÝ KHUNG TÌM KIẾM & NGHIỆP VỤ (LEFT PANEL)
         with col_left_search:
             with st.expander("🔍 TÌM KIẾM TRẠM", expanded=True):
                 with st.form("form_tra_cuu", clear_on_submit=True):
@@ -320,7 +319,6 @@ else:
                 else:
                     st.error("❌ Yêu cầu nhập đầy đủ tham số!")
 
-            # Xử lý các nút tác vụ khi có trạm đang được định vị
             if st.session_state.tram_hien_tai is not None:
                 cell_id_hien_tai = st.session_state.tram_hien_tai[COT_CELL_ID]
                 
@@ -344,7 +342,6 @@ else:
                         st.session_state.ds_gan_nhat = []
                         st.toast("⚠️ Không có dữ liệu lân cận.")
             
-            # Hiển thị danh sách các trạm lân cận phân tích được
             if st.session_state.tram_hien_tai is not None and st.session_state.ds_gan_nhat:
                 with st.expander("📡 TRẠM BTS GẦN NHẤT", expanded=True):
                     for idx, tram_near in enumerate(st.session_state.ds_gan_nhat):
@@ -366,7 +363,6 @@ else:
 
             so_luong_diem = len(st.session_state.danh_sach_luu)
             
-            # Tính toán thông số độ dài cung đường/lộ trình
             if so_luong_diem >= 2:
                 with st.expander("📏 KHOẢNG CÁCH / LỘ TRÌNH", expanded=False):
                     tong_khoang_cach = 0.0
@@ -377,7 +373,6 @@ else:
                         st.markdown(f"<div style='font-size: 13px; margin-bottom: 6px;'>🔹 <b>Trạm {p1[COT_CELL_ID]}</b> ➡️ <b>Trạm {p2[COT_CELL_ID]}</b>: <code>{kc_chi_tiet:.2f} km</code></div>", unsafe_allow_html=True)
                     st.info(f"Tổng chiều dài tuyến đường: **{tong_khoang_cach:.2f} km**")
 
-            # Quản lý danh sách điểm ghim hiện tại
             if so_luong_diem > 0:
                 with st.expander(f"📍 Dữ liệu lộ trình/điểm ghim ({so_luong_diem})", expanded=False):
                     index_can_xoa = None
@@ -414,7 +409,6 @@ else:
 
         toa_do_vung = []
 
-        # Vẽ chuỗi điểm ghim lộ trình
         for index, tram_luu in enumerate(st.session_state.danh_sach_luu):
             lat_l, lon_l = float(tram_luu[COT_VI_DO]), float(tram_luu[COT_KINH_DO])
             toa_do_vung.append([lat_l, lon_l])
@@ -430,7 +424,6 @@ else:
         if len(toa_do_vung) >= 2:
             folium.PolyLine(locations=toa_do_vung, color="#0275d8", weight=4, opacity=0.8).add_to(m)
 
-        # Vẽ điểm trạm truy vấn chính xác hiện tại và sơ đồ kết nối lân cận
         if st.session_state.tram_hien_tai is not None:
             lat_val, lon_val = float(st.session_state.tram_hien_tai[COT_VI_DO]), float(st.session_state.tram_hien_tai[COT_KINH_DO])
             cgi_val = truy_xuat_du_lieu_cot(st.session_state.tram_hien_tai, ['CGI', 'cgi'])
