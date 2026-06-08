@@ -136,10 +136,48 @@ st.markdown(
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. KHẮC PHỤC TRIỆT ĐỂ LỖI MẤT CHỮ TRÊN TABLET / MOBILE */
+    /* 2.6. 📱 KHẮC PHỤC TRIỆT ĐỂ LỖI MẤT CHỮ & TRÀN KHUNG TRÊN TABLET / MOBILE */
     @media (max-width: 1024px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
             top: 12px !important; left: 12px !important; width: 320px !important; max-width: 92% !important; 
+        }
+    }
+
+    /* Áp dụng tối ưu riêng cho thiết bị di động (màn hình dưới 768px) */
+    @media (max-width: 768px) {
+        /* Cố định nhãn (label) để chữ không bị bẻ hàng hay rách chữ */
+        html body div[data-testid="stForm"] label p { 
+            font-size: 11.5px !important; 
+            white-space: nowrap !important; 
+            letter-spacing: -0.2px !important; 
+        }
+        
+        /* Chuyển đổi linh hoạt sang Flexbox để ép 2 cột giữ nguyên hàng ngang */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-bottom: 0px !important;
+        }
+
+        /* Khóa cứng tỷ lệ 50/50 tuyệt đối cho từng ô, không cho đẩy khung */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            width: 50% !important;
+            max-width: 50% !important;
+            flex: 1 1 50% !important;
+            min-width: 0 !important;
+            padding: 0 !important; 
+        }
+
+        /* Thu nhỏ nhẹ kích thước chữ bên trong ô input di động để dễ nhìn */
+        html body div[data-testid="stForm"] input {
+            font-size: 12.5px !important;
+            padding: 6px 8px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            height: 34px !important;
         }
     }
 
@@ -148,7 +186,7 @@ st.markdown(
             width: 300px !important; max-width: 95% !important;
         }
         html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 6px !important; }
-        html body div[data-testid="stForm"] label p { font-size: 12px !important; }
+        html body div[data-testid="stForm"] label p { font-size: 11px !important; }
         html body div[data-testid="stForm"] input { padding: 5px 6px !important; font-size: 12px !important; height: 32px !important; }
         div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 13px !important; padding: 4px !important; }
     }
