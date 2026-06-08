@@ -37,26 +37,26 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. SỬA LỖI TRÀN MÀN HÌNH - KHÓA TỶ LỆ HÌNH HỌC TUYỆT ĐỐI (UI/UX FIX)
+# 2. ĐẶC TRỊ CHỐNG TRÀN DI ĐỘNG - ÉP CỨNG 2 Ô / HÀNG CHUẨN 50-50 (UI/UX RE-DESIGN)
 # ==============================================================================
 st.markdown(
     """
     <style>
-    /* 2.1. Ẩn tối đa các thành phần thừa cấu trúc mặc định */
+    /* 2.1. Ẩn các thành phần thừa mặc định */
     [data-testid="stSidebarNav"], [data-testid="stSidebar"], section[data-testid="stSidebar"], 
     header, footer, #MainMenu, iframe[title="Manage app"], .stAppDeployButton, div[data-testid="stAppDeployButton"], footer + div {
         display: none !important; visibility: hidden !important; width: 0px !important; height: 0px !important;
     }
-    .block-container { padding: 0.6rem 1rem 0rem 1rem !important; max-width: 100% !important; }
+    .block-container { padding: 0.5rem 0.8rem 0rem 0.8rem !important; max-width: 100% !important; }
     .stFoliumStatic { margin-top: 0px !important; width: 100% !important; }
     .stFoliumStatic > iframe { width: 100% !important; border-radius: 12px !important; }
 
-    /* 2.2. Thu gọn tối giản khung kéo thả File Uploader */
+    /* 2.2. Thu gọn khung kéo thả File Uploader */
     [data-testid="stFileUploader"] section { padding: 8px !important; min-height: 40px !important; background-color: var(--secondary-background-color) !important; }
     [data-testid="stFileUploader"] small { display: none !important; }
     [data-testid="stFileUploadDropzone"] div { margin: 0px !important; padding: 2px !important; }
 
-    /* 2.3. Tối ưu hóa màu sắc hiển thị cho chế độ Sáng/Tối (Light/Dark Mode) */
+    /* 2.3. Tối ưu hóa màu sắc Light/Dark Mode */
     label, p, span, summary, div { color: var(--text-color) !important; }
     .stExpander {
         background-color: var(--background-color) !important;
@@ -76,50 +76,46 @@ st.markdown(
         background-color: #3B82F6 !important; color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;
         font-weight: 700 !important; border-radius: 8px !important; border: none !important; transition: all 0.2s ease;
     }
-    div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"]:hover {
-        background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
-    }
 
-    /* 2.4. KHÓA CỐ ĐỊNH LAYOUT TOÁN HỌC CHỐNG TRÀN VIỀN */
-    div[data-testid="stForm"] { width: 100% !important; }
-    div[data-testid="stForm"] * { box-sizing: border-box !important; } /* Ép mọi padding co cụm vào trong, cấm nở ra ngoài */
+    /* 2.4. ĐỊNH DẠNG LAYOUT FORM TÌM KIẾM CHUNG (CẢ PC VÀ DI ĐỘNG) */
+    div[data-testid="stForm"] { width: 100% !important; padding: 10px !important; }
     
-    html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+    /* Ép tất cả các khối st.columns bên trong form luôn luôn nằm ngang */
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 8px !important;
+        gap: 6px !important;
         width: 100% !important;
         padding: 0px !important;
-        margin-bottom: 4px !important;
+        margin: 0px 0px 4px 0px !important;
     }
     
-    /* PC: Chia đôi chuẩn xác 50% trừ đi một nửa khoảng cách gap (8px / 2 = 4px) */
-    html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: calc(50% - 4px) !important; 
-        max-width: calc(50% - 4px) !important; 
-        min-width: calc(50% - 4px) !important; 
-        flex: 0 0 calc(50% - 4px) !important; 
+    /* Triệt tiêu margin âm và ép cứng độ rộng mỗi cột chiếm chuẩn xác 50% bao gồm cả gap */
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: calc(50% - 3px) !important;
+        max-width: calc(50% - 3px) !important;
+        min-width: calc(50% - 3px) !important;
+        flex: 0 0 calc(50% - 3px) !important;
         padding: 0px !important;
+        margin: 0px !important;
     }
     
-    html body div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; }
-    
-    html body div[data-testid="stForm"] label p {
-        font-size: 13px !important;
+    /* Định dạng thành phần nhập liệu bên trong ô */
+    div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; padding: 0px !important; }
+    div[data-testid="stForm"] label p {
+        font-size: 12px !important;
         white-space: nowrap !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
         letter-spacing: -0.2px !important;
         margin-bottom: 2px !important;
         font-weight: 600 !important;
     }
-
-    html body div[data-testid="stForm"] input { 
-        font-size: 13.5px !important; 
-        padding: 6px 6px !important; 
-        height: 36px !important; 
+    div[data-testid="stForm"] input { 
+        font-size: 13px !important; 
+        padding: 4px 6px !important; 
+        height: 34px !important; 
         width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* 2.5. LỚP LƠ LỬNG BẢN ĐỒ (MẶC ĐỊNH PC) */
@@ -134,43 +130,47 @@ st.markdown(
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. ĐẶC TRỊ TUYỆT ĐỐI CHỐNG TRÀN CHO ĐIỆN THOẠI */
-    @media (max-width: 768px) {
-        /* Ép Panel tìm kiếm co giãn theo màn hình thực tế, cách đều 2 lề bên đúng 10px */
+    /* 2.6. ĐẶC TRỊ TUYỆT ĐỐI CHO MÀN HÌNH NHỎ (< 780PX) - CHỐNG TRÀN VÀ GIỮ NGUYÊN 50/50 */
+    @media (max-width: 780px) {
+        /* Đưa khung tìm kiếm lơ lửng ôm vừa vặn lề bản đồ di động */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: calc(100% - 20px) !important; 
-            max-width: 330px !important; /* Giới hạn để không bị quá to trên máy tính bảng nhỏ */
-            top: 10px !important;
-            left: 10px !important;
+            width: calc(100% - 16px) !important; 
+            max-width: 340px !important;
+            top: 8px !important;
+            left: 8px !important;
         }
         
-        /* Bóp nhỏ khoảng cách ô trên di động xuống 4px */
-        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+        /* Bóp nhỏ khoảng cách giữa 2 ô xuống 4px */
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
             gap: 4px !important;
-            margin-bottom: 2px !important;
         }
         
-        /* Điện thoại: Cân bằng lại kích thước trừ khoảng cách gap mới (4px / 2 = 2px) */
-        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        /* Ép lại toán học chuẩn xác cho di động: 50% trừ đi một nửa của gap (4px / 2 = 2px) */
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
             width: calc(50% - 2px) !important; 
             max-width: calc(50% - 2px) !important; 
             min-width: calc(50% - 2px) !important; 
             flex: 0 0 calc(50% - 2px) !important; 
         }
         
-        /* Thu nhỏ nhẹ font chữ và chiều cao để nội dung nằm gọn lọt lòng màn hình */
-        html body div[data-testid="stForm"] label p {
+        /* Thu nhỏ chữ tiêu đề nhãn để không tràn chữ */
+        div[data-testid="stForm"] label p {
             font-size: 11px !important; 
             letter-spacing: -0.3px !important;
         }
-        html body div[data-testid="stForm"] input { 
-            font-size: 12.5px !important; 
-            height: 32px !important;
-            padding: 4px 6px !important;
+        
+        /* Hạ chiều cao ô nhập liệu xuống 30px để khít tuyệt đối */
+        div[data-testid="stForm"] input { 
+            font-size: 12px !important; 
+            height: 30px !important;
+            padding: 2px 4px !important;
         }
+        
+        /* Thu nhỏ nút bấm Tìm Kiếm */
         div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
-            padding: 4px !important;
-            font-size: 13px !important;
+            padding: 2px !important;
+            font-size: 12.5px !important;
+            height: 32px !important;
         }
     }
     </style>
