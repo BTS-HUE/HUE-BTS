@@ -322,7 +322,8 @@ else:
 
             if nut_tim_kiem:
                 if all([f1, f2, f3, f4]):
-                    ket_qua = df[(df[COT_MCC] == f1) & (df[df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
+                    # ĐÃ ĐƯỢC SỬA LỖI ĐÓNG MỞ NGOẶC ĐÚNG CÚ PHÁP TẠI ĐÂY
+                    ket_qua = df[(df[COT_MCC] == f1) & (df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.session_state.ds_gan_nhat = [] 
