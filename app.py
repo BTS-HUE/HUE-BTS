@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & SỬA LỖI Ô INPUT BỊ NGẮN (UI/UX INJECTION)
+# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & SỬA LỖI LỆCH KHUNG TRÊN DI ĐỘNG (UI/UX INJECTION)
 # ==============================================================================
 st.markdown(
     """
@@ -80,10 +80,9 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. SỬA LỖI Ô INPUT QUÁ NGẮN - CẤU HÌNH CHO DI ĐỘNG & MÁY TÍNH */
+    /* 2.4. MẶC ĐỊNH HIỂN THỊ TRÊN PC / MÀN HÌNH LỚN */
     div[data-testid="stForm"] { width: 100% !important; box-sizing: border-box !important; }
     
-    /* Ghi đè toàn bộ cấu trúc Grid lỗi cũ bằng Flexbox ngang có khoảng cách vừa phải */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -91,10 +90,9 @@ st.markdown(
         gap: 12px !important;
         width: 100% !important;
         padding: 0px !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 6px !important;
     }
     
-    /* Ép hai cột chia đều chính xác 50% diện tích chiều ngang container */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 50% !important; 
         max-width: 50% !important; 
@@ -115,7 +113,6 @@ st.markdown(
         font-weight: 600 !important;
     }
 
-    /* Tối ưu hóa ruột ô nhập liệu - tăng khoảng trống hiển thị chữ bên trong */
     html body div[data-testid="stForm"] input { 
         font-size: 14px !important; 
         padding: 6px 8px !important; 
@@ -125,26 +122,52 @@ st.markdown(
         box-sizing: border-box !important;
     }
 
-    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG PANEL (FLOATING PANEL CHIỀU RỘNG RỘNG HƠN) */
+    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG BẢN ĐỒ */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
         position: absolute !important; top: 15px !important; left: 15px !important; 
-        width: 350px !important; /* Mở rộng toàn bộ chiều rộng thanh tìm kiếm để ôm trọn text ô nhập */
+        width: 350px !important; 
         max-width: 92% !important;
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. ĐÁP ỨNG GIAO DIỆN DI ĐỘNG NHỎ (MÀN HÌNH < 480PX) */
-    @media (max-width: 480px) {
+    /* 2.6. SỬA LỖI ĐẶC TRỊ CHO ĐIỆN THOẠI & MÁY TÍNH BẢNG (MÀN HÌNH NHỎ) */
+    @media (max-width: 768px) {
+        /* Thu nhỏ thanh panel tìm kiếm để vừa khít màn hình di động, không bị tràn viền */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 320px !important; max-width: 95% !important;
+            width: 290px !important; 
+            max-width: 94% !important;
+            top: 10px !important;
+            left: 10px !important;
         }
-        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 8px !important; }
-        html body div[data-testid="stForm"] label p { font-size: 11.5px !important; }
-        html body div[data-testid="stForm"] input { padding: 4px 6px !important; font-size: 13px !important; height: 34px !important; }
+
+        /* Ép cụm ô nhập liệu từ hàng ngang xếp thành hàng dọc để kéo dài ô tối đa */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+            flex-direction: column !important;
+            gap: 4px !important;
+            margin-bottom: 0px !important;
+        }
+
+        /* Chuyển các cột con chiếm 100% chiều rộng của Form */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+
+        html body div[data-testid="stForm"] input {
+            height: 36px !important;
+            font-size: 13.5px !important;
+            padding: 4px 8px !important;
+        }
+
+        html body div[data-testid="stForm"] label p {
+            font-size: 12.5px !important;
+            margin-bottom: 1px !important;
+        }
     }
     </style>
     """,
