@@ -80,7 +80,7 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. Đóng khung CSS Grid cố định 2 hàng ngang */
+    /* 2.4. Đóng khung CSS Grid cố định 2 hàng ngang (Desktop) */
     div[data-testid="stForm"] { border: none !important; padding: 0px !important; }
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: grid !important;
@@ -89,7 +89,7 @@ st.markdown(
         margin-bottom: 0px !important;
     }
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 100% !important; max-width: 100% !important; min-width: 0 !important; flex: none !important; padding: 0px !important;
+        width: 100% !important; max-width: 100% !important; min-width: 0 !important; flex: 1 1 0% !important; padding: 0px !important;
     }
     div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; }
     div[data-testid="stForm"] label p {
@@ -108,35 +108,54 @@ st.markdown(
         position: absolute !important; top: 15px !important; left: 15px !important; width: 330px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. TỐI ƯU ĐÁP ỨNG CHO MÁY TÍNH BẢNG & ĐIỆN THOẠI (SỬA LỖI MẤT CHỮ Ô NHẬP) */
+    /* 2.6. TỐI ƯU ĐÁP ỨNG TOÀN DIỆN CHO MÁY TÍNH BẢNG & ĐIỆN THOẠI (SỬA LỖI MẤT CHỮ) */
     @media (max-width: 1024px) {
-        /* Nới rộng Panel từ 250px lên hẳn 310px trên Tablet để các ô tìm kiếm có không gian kéo dài ra */
+        /* Nới rộng tối đa chiều ngang Panel trên màn hình cỡ vừa và nhỏ */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
             top: 12px !important; 
             left: 12px !important; 
-            width: 310px !important; 
-            max-width: 90% !important; 
+            width: 320px !important; 
+            max-width: 92% !important; 
         }
-        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 8px !important; }
-        div[data-testid="stForm"] label p { font-size: 11.5px !important; } /* Thu nhỏ nhẹ chữ tiêu đề để vừa khít ô */
-        .stExpander input { 
+        
+        /* Cấu hình lại CSS Grid ép buộc co giãn đều đặn cho các ô con bên trong */
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { 
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 8px !important; 
+        }
+        
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            flex: 1 1 50% !important;
+            max-width: 50% !important;
+            min-width: 0 !important;
+        }
+
+        /* Tối ưu hóa font chữ và padding của ô nhập để chống tràn text hoàn toàn */
+        div[data-testid="stForm"] label p { 
             font-size: 12px !important; 
-            padding: 4px 6px !important; /* Giảm bớt khoảng trống thừa bên trong ô nhập */
+            font-weight: 500 !important;
         }
-        .stExpander > div { padding: 10px !important; }
+        
+        .stExpander input { 
+            font-size: 13px !important; 
+            padding: 5px 6px !important; /* Giảm khoảng đệm nội bộ để nhường không gian cho chữ */
+        }
+        
+        .stExpander > div { padding: 8px !important; }
     }
 
     @media (max-width: 480px) {
-        /* Tối ưu riêng cho các dòng điện thoại màn hình cực nhỏ */
+        /* Tối ưu hóa giao diện siêu nhỏ gọn dành riêng cho điện thoại di động */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 275px !important; 
-            max-width: 92% !important;
+            width: 290px !important; 
+            max-width: 94% !important;
         }
         div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 6px !important; }
-        div[data-testid="stForm"] label p { font-size: 10.5px !important; }
-        .stExpander input { padding: 4px 4px !important; font-size: 11.5px !important; }
-        .stExpander summary p { font-size: 12.5px !important; }
-        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 12.5px !important; padding: 4px !important; }
+        div[data-testid="stForm"] label p { font-size: 11px !important; }
+        .stExpander input { padding: 4px 5px !important; font-size: 12px !important; }
+        .stExpander summary p { font-size: 13px !important; }
+        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 13px !important; padding: 4px !important; }
         .stExpander { border-radius: 10px !important; box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3) !important; backdrop-filter: blur(8px) !important; }
     }
     </style>
