@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & SỬA LỖI LỆCH KHUNG TRÊN DI ĐỘNG (UI/UX INJECTION)
+# 2. CỐ ĐỊNH CẤU TRÚC 2 HÀNG NGANG CHO CẢ PC VÀ ĐIỆN THOẠI (UI/UX INJECTION)
 # ==============================================================================
 st.markdown(
     """
@@ -80,49 +80,50 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. MẶC ĐỊNH HIỂN THỊ TRÊN PC / MÀN HÌNH LỚN */
+    /* 2.4. KHÓA CỐ ĐỊNH LAYOUT 2 Ô TRÊN 1 HÀNG CHO TẤT CẢ THIẾT BỊ */
     div[data-testid="stForm"] { width: 100% !important; box-sizing: border-box !important; }
     
+    /* Luôn giữ hiển thị hàng ngang (row) bất kể màn hình to hay nhỏ */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 12px !important;
+        gap: 10px !important;
         width: 100% !important;
         padding: 0px !important;
         margin-bottom: 6px !important;
     }
     
+    /* Luôn ép mỗi ô chiếm chính xác 50% chiều rộng của hàng */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 50% !important; 
         max-width: 50% !important; 
-        min-width: 0 !important; 
-        flex: 1 1 50% !important; 
+        min-width: 50% !important; 
+        flex: 0 0 50% !important; 
         padding: 0px !important;
     }
     
-    html body div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; min-width: 0 !important; }
+    html body div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; }
     
     html body div[data-testid="stForm"] label p {
-        font-size: 13.5px !important;
+        font-size: 13px !important;
         white-space: nowrap !important;
         overflow: visible !important;
         text-overflow: clip !important;
-        letter-spacing: -0.1px !important;
+        letter-spacing: -0.2px !important;
         margin-bottom: 2px !important;
         font-weight: 600 !important;
     }
 
     html body div[data-testid="stForm"] input { 
-        font-size: 14px !important; 
-        padding: 6px 8px !important; 
-        min-width: 0 !important;
+        font-size: 13.5px !important; 
+        padding: 6px 6px !important; 
         height: 38px !important; 
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG BẢN ĐỒ */
+    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG BẢN ĐỒ (MẶC ĐỊNH PC) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
@@ -134,39 +135,20 @@ st.markdown(
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. SỬA LỖI ĐẶC TRỊ CHO ĐIỆN THOẠI & MÁY TÍNH BẢNG (MÀN HÌNH NHỎ) */
+    /* 2.6. TINH CHỈNH RIÊNG CHO DI ĐỘNG (ĐẢM BẢO KHÔNG BỊ LỆCH KHUNG) */
     @media (max-width: 768px) {
-        /* Thu nhỏ thanh panel tìm kiếm để vừa khít màn hình di động, không bị tràn viền */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 290px !important; 
+            width: 300px !important; /* Độ rộng tối ưu vừa vặn màn hình điện thoại */
             max-width: 94% !important;
             top: 10px !important;
             left: 10px !important;
         }
-
-        /* Ép cụm ô nhập liệu từ hàng ngang xếp thành hàng dọc để kéo dài ô tối đa */
-        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
-            flex-direction: column !important;
-            gap: 4px !important;
-            margin-bottom: 0px !important;
-        }
-
-        /* Chuyển các cột con chiếm 100% chiều rộng của Form */
-        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            flex: 1 1 100% !important;
-        }
-
-        html body div[data-testid="stForm"] input {
-            height: 36px !important;
-            font-size: 13.5px !important;
-            padding: 4px 8px !important;
-        }
-
         html body div[data-testid="stForm"] label p {
-            font-size: 12.5px !important;
-            margin-bottom: 1px !important;
+            font-size: 11.5px !important; /* Thu nhỏ chữ tiêu đề nhãn một chút trên điện thoại */
+        }
+        html body div[data-testid="stForm"] input { 
+            font-size: 13px !important; 
+            height: 35px !important;
         }
     }
     </style>
