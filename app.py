@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. CỐ ĐỊNH CẤU TRÚC 2 HÀNG NGANG CHO CẢ PC VÀ ĐIỆN THOẠI (UI/UX INJECTION)
+# 2. TỐI ƯU RESPONSIVE CHỐNG TRÀN - GIỮ NGUYÊN 2 HÀNG NGANG (UI/UX INJECTION)
 # ==============================================================================
 st.markdown(
     """
@@ -80,21 +80,21 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. KHÓA CỐ ĐỊNH LAYOUT 2 Ô TRÊN 1 HÀNG CHO TẤT CẢ THIẾT BỊ */
+    /* 2.4. ĐỊNH DẠNG LAYOUT 2 Ô TRÊN 1 HÀNG (MẶC ĐỊNH CHO TẤT CẢ THIẾT BỊ) */
     div[data-testid="stForm"] { width: 100% !important; box-sizing: border-box !important; }
     
-    /* Luôn giữ hiển thị hàng ngang (row) bất kể màn hình to hay nhỏ */
+    /* Ép cấu trúc luôn nằm ngang bất kể độ rộng màn hình */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 10px !important;
+        gap: 8px !important;
         width: 100% !important;
         padding: 0px !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 4px !important;
     }
     
-    /* Luôn ép mỗi ô chiếm chính xác 50% chiều rộng của hàng */
+    /* Khóa cứng tỷ lệ mỗi ô chiếm chính xác 50% */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 50% !important; 
         max-width: 50% !important; 
@@ -118,12 +118,12 @@ st.markdown(
     html body div[data-testid="stForm"] input { 
         font-size: 13.5px !important; 
         padding: 6px 6px !important; 
-        height: 38px !important; 
+        height: 36px !important; 
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
-    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG BẢN ĐỒ (MẶC ĐỊNH PC) */
+    /* 2.5. LỚP LƠ LỬNG BẢN ĐỒ (MẶC ĐỊNH PC) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
@@ -135,20 +135,39 @@ st.markdown(
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. TINH CHỈNH RIÊNG CHO DI ĐỘNG (ĐẢM BẢO KHÔNG BỊ LỆCH KHUNG) */
+    /* 2.6. ĐẶC TRỊ CHỐNG TRÀN CHO ĐIỆN THOẠI (MÀN HÌNH NHỎ) */
     @media (max-width: 768px) {
+        /* Cho phép hộp tìm kiếm tự co giãn linh hoạt theo tỷ lệ màn hình để không bao giờ bị tràn */
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 300px !important; /* Độ rộng tối ưu vừa vặn màn hình điện thoại */
-            max-width: 94% !important;
+            width: 92% !important; 
+            max-width: 290px !important; /* Ngăn không cho quá to trên các máy màn hình rộng */
             top: 10px !important;
             left: 10px !important;
         }
-        html body div[data-testid="stForm"] label p {
-            font-size: 11.5px !important; /* Thu nhỏ chữ tiêu đề nhãn một chút trên điện thoại */
+        
+        /* Thu nhỏ khoảng cách giữa 2 ô để tiết kiệm diện tích */
+        html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+            gap: 4px !important;
+            margin-bottom: 2px !important;
         }
+        
+        /* Thu nhỏ chữ tiêu đề nhãn để không bị tràn chữ */
+        html body div[data-testid="stForm"] label p {
+            font-size: 11px !important; 
+            letter-spacing: -0.3px !important;
+        }
+        
+        /* Thu nhỏ ô nhập dữ liệu một chút để ôm khít màn hình di động */
         html body div[data-testid="stForm"] input { 
-            font-size: 13px !important; 
-            height: 35px !important;
+            font-size: 12px !important; 
+            height: 30px !important;
+            padding: 4px 4px !important;
+        }
+        
+        /* Thu nhỏ nút bấm Tìm Kiếm */
+        div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] {
+            padding: 4px !important;
+            font-size: 13px !important;
         }
     }
     </style>
