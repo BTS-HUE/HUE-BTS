@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & CSS GRID CỐ ĐỊNH 50/50 (UI/UX INJECTION)
+# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & SỬA LỖI HIỂN THỊ CHỮ (UI/UX INJECTION)
 # ==============================================================================
 st.markdown(
     """
@@ -80,18 +80,18 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. SỬ DỤNG CSS GRID CỐ ĐỊNH 50% - 50% KHÔNG BỊ TRÀN CHỮ */
+    /* 2.4. SỬ DỤNG CSS GRID CHUẨN ĐỂ KHÔNG BỊ ÉP CHỮ */
     div[data-testid="stForm"] { border: none !important; padding: 0px !important; }
     
-    /* Ép buộc dòng chứa 2 ô nhập luôn chia theo tỷ lệ Grid 50/50 cứng */
+    /* Sử dụng 1fr 1fr để chia đều khung, kết hợp khoảng cách 10px */
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: grid !important;
-        grid-template-columns: 50% 50% !important;
-        gap: 6px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
         margin-bottom: 0px !important;
     }
     
-    /* Reset lại thuộc tính cột con của Streamlit để tuân thủ CSS Grid bên trên */
+    /* Thiết lập giới hạn tối thiểu về 0 để ô không bị trào ra ngoài */
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 100% !important; 
         max-width: 100% !important; 
@@ -100,50 +100,51 @@ st.markdown(
         padding: 0px !important;
     }
     
-    div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; }
+    div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; min-width: 0 !important; }
     
-    /* Đảm bảo tiêu đề text của ô nhập không bị xuống hàng vô lý */
+    /* Cho phép chữ hiển thị đè hoặc đầy đủ, không ẩn đi */
     div[data-testid="stForm"] label p {
-        font-size: 12.5px !important;
+        font-size: 13px !important;
         white-space: nowrap !important;
         overflow: visible !important;
-        text-overflow: unset !important;
+        text-overflow: clip !important;
     }
 
-    /* Thu hẹp padding nội bộ của ô input để tăng diện tích hiển thị ký tự */
+    /* Đệm lại cho ô input để hiển thị vừa vặn chữ */
     .stExpander input { 
         font-size: 13px !important; 
-        padding: 4px 6px !important; 
+        padding: 6px 8px !important; 
+        min-width: 0 !important;
     }
 
-    /* 2.5. Thiết lập khung bảng điều khiển lơ lửng trên bản đồ (Desktop) */
+    /* 2.5. Tăng rộng khung bảng điều khiển trái (Mở rộng từ 330px lên 360px cho máy tính) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
-        position: absolute !important; top: 15px !important; left: 15px !important; width: 330px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
+        position: absolute !important; top: 15px !important; left: 15px !important; width: 360px !important; z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. TỐI ƯU ĐÁP ỨNG BIẾN ĐỔI CHO MÁY TÍNH BẢNG & ĐIỆN THOẠI */
+    /* 2.6. KHẮC PHỤC TRIỆT ĐỂ LỖI MẤT CHỮ TRÊN TABLET / MOBILE */
     @media (max-width: 1024px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
             top: 12px !important; 
             left: 12px !important; 
-            width: 325px !important; 
-            max-width: 92% !important; 
+            width: 350px !important; /* Mở rộng tối đa cho Tablet để hiển thị chữ */
+            max-width: 95% !important; 
         }
-        div[data-testid="stForm"] label p { font-size: 11.5px !important; }
+        div[data-testid="stForm"] label p { font-size: 12.5px !important; }
     }
 
     @media (max-width: 480px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
-            width: 295px !important; 
-            max-width: 94% !important;
+            width: 330px !important; /* Mở rộng cho Mobile */
+            max-width: 96% !important;
         }
-        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 4px !important; }
-        div[data-testid="stForm"] label p { font-size: 11px !important; }
-        .stExpander input { padding: 4px 4px !important; font-size: 12px !important; }
+        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] { gap: 8px !important; }
+        div[data-testid="stForm"] label p { font-size: 12px !important; }
+        .stExpander input { padding: 5px 6px !important; font-size: 12px !important; }
         div[data-testid="stForm"] button[data-testid="baseButton-secondaryFormSubmit"] { font-size: 13px !important; padding: 4px !important; }
     }
     </style>
