@@ -37,7 +37,7 @@ st.session_state.setdefault("ds_gan_nhat", [])
 COT_MCC, COT_MNC, COT_LAC_TAC, COT_CELL_ID, COT_VI_DO, COT_KINH_DO = 'MCC', 'MNC', 'LAC/TAC', 'CELL ID', 'Latitude', 'Longitude'
 
 # ==============================================================================
-# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & SỬA LỖI HIỂN THỊ CHỮ (UI/UX INJECTION)
+# 2. TỐI ƯU GIAO DIỆN ĐÁP ỨNG & KHẮC PHỤC XUNG ĐỘT CSS (UI/UX INJECTION)
 # ==============================================================================
 st.markdown(
     """
@@ -80,20 +80,18 @@ st.markdown(
         background-color: #2563EB !important; box-shadow: 0px 4px 12px rgba(59, 130, 246, 0.3) !important;
     }
 
-    /* 2.4. 🚀 BỘ QUY TẮC CSS GRID ÉP BUỘC TRÊN MỌI MÀN HÌNH (DESKTOP/TABLET/MOBILE) */
+    /* 2.4. MẶC ĐỊNH GIAO DIỆN KHUNG FORM (ÁP DỤNG TRÊN MÀN HÌNH LỚN / PC) */
     div[data-testid="stForm"] { width: 100% !important; box-sizing: border-box !important; }
     
-    /* Sử dụng 'html body' để tăng tính đặc quyền, đánh bật Inline-CSS của Desktop */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
         display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; /* Khóa chết 2 cột */
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         gap: 8px !important;
         width: 100% !important;
         padding: 0px !important;
         margin-bottom: 0px !important;
     }
     
-    /* Buộc các cột không được tự thay đổi kích thước theo nội dung */
     html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
         width: 100% !important; 
         max-width: 100% !important; 
@@ -104,17 +102,15 @@ st.markdown(
     
     html body div[data-testid="stForm"] .stTextInput { width: 100% !important; margin: 0px !important; min-width: 0 !important; }
     
-    /* Xử lý triệt để lỗi "rách chữ": Cho phép chữ tràn viền an toàn và thu hẹp khoảng cách chữ */
     html body div[data-testid="stForm"] label p {
         font-size: 13px !important;
         white-space: nowrap !important;
         overflow: visible !important;
         text-overflow: clip !important;
-        letter-spacing: -0.2px !important; /* Bóp nhẹ khoảng cách để khít khung */
+        letter-spacing: -0.2px !important;
         margin-bottom: 2px !important;
     }
 
-    /* Chuẩn hóa ô nhập liệu để khớp hoàn hảo trên cả Mobile lẫn PC */
     html body div[data-testid="stForm"] input { 
         font-size: 13px !important; 
         padding: 6px 8px !important; 
@@ -124,45 +120,44 @@ st.markdown(
         box-sizing: border-box !important;
     }
 
-    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG (FLOATING PANEL) - GIỚI HẠN CHUẨN KHUNG 320PX */
+    /* 2.5. ĐỊNH HÌNH LỚP LƠ LỬNG (FLOATING PANEL) */
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) { position: relative !important; display: block !important; height: 730px !important; }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(2) {
         position: absolute !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; z-index: 1 !important; padding: 0px !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) {
         position: absolute !important; top: 15px !important; left: 15px !important; 
-        width: 320px !important; /* Cố định cứng 320px trên Desktop/Tablet */
+        width: 320px !important;
         max-width: 90% !important;
         z-index: 9999 !important; background: transparent !important; padding: 0px !important;
     }
 
-    /* 2.6. 📱 KHẮC PHỤC TRIỆT ĐỂ LỖI MẤT CHỮ & TRÀN KHUNG TRÊN TABLET / MOBILE */
+    /* 2.6. BỘ RESPONSIVE CHỐNG XUNG ĐỘT - CẤU HÌNH RIÊNG CHO DI ĐỘNG & TABLET */
     @media (max-width: 1024px) {
         div[data-testid="stHorizontalBlock"]:has(.stFoliumStatic) div[data-testid="column"]:nth-of-type(1) { 
             top: 12px !important; left: 12px !important; width: 320px !important; max-width: 92% !important; 
         }
     }
 
-    /* Áp dụng tối ưu riêng cho thiết bị di động (màn hình dưới 768px) */
+    /* ĐẶC TRỊ RIÊNG CHO MÀN HÌNH DI ĐỘNG (Dưới 768px): Xóa Grid cũ, ép đè Flexbox mới */
     @media (max-width: 768px) {
-        /* Cố định nhãn (label) để chữ không bị bẻ hàng hay rách chữ */
         html body div[data-testid="stForm"] label p { 
             font-size: 11.5px !important; 
             white-space: nowrap !important; 
             letter-spacing: -0.2px !important; 
         }
         
-        /* Chuyển đổi linh hoạt sang Flexbox để ép 2 cột giữ nguyên hàng ngang */
+        /* Chuyển hoàn toàn Grid sang Flexbox ngang hàng */
         html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
-            gap: 8px !important;
+            gap: 10px !important;
             width: 100% !important;
-            margin-bottom: 0px !important;
+            margin-bottom: 5px !important;
         }
 
-        /* Khóa cứng tỷ lệ 50/50 tuyệt đối cho từng ô, không cho đẩy khung */
+        /* Khóa chết tỷ lệ chia đều 50% cho từng ô input con */
         html body div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
             width: 50% !important;
             max-width: 50% !important;
@@ -171,13 +166,12 @@ st.markdown(
             padding: 0 !important; 
         }
 
-        /* Thu nhỏ nhẹ kích thước chữ bên trong ô input di động để dễ nhìn */
         html body div[data-testid="stForm"] input {
-            font-size: 12.5px !important;
+            font-size: 13px !important;
             padding: 6px 8px !important;
             width: 100% !important;
             box-sizing: border-box !important;
-            height: 34px !important;
+            height: 36px !important;
         }
     }
 
@@ -328,7 +322,7 @@ else:
 
             if nut_tim_kiem:
                 if all([f1, f2, f3, f4]):
-                    ket_qua = df[(df[COT_MCC] == f1) & (df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
+                    ket_qua = df[(df[COT_MCC] == f1) & (df[df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.session_state.ds_gan_nhat = [] 
