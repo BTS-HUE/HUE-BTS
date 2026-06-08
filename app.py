@@ -78,25 +78,28 @@ st.markdown(
     }
 
     /* 2.4. ĐỊNH DẠNG LAYOUT FORM TÌM KIẾM CHUNG (CẢ PC VÀ DI ĐỘNG) */
-    div[data-testid="stForm"] { width: 100% !important; padding: 10px !important; }
-    
-    /* Ép tất cả các khối st.columns bên trong form luôn luôn nằm ngang */
-    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 6px !important;
-        width: 100% !important;
-        padding: 0px !important;
-        margin: 0px 0px 4px 0px !important;
+    div[data-testid="stForm"] { 
+        width: 100% !important; 
+        padding: 10px !important; 
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
     
-    /* Triệt tiêu margin âm và ép cứng độ rộng mỗi cột chiếm chuẩn xác 50% bao gồm cả gap */
+    /* Chuyển hẳn sang Grid để khóa cứng tỷ lệ 2 ô trên 1 hàng không lo tràn viền */
+    div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        width: 100% !important;
+        padding: 0px !important;
+        margin: 0px 0px 8px 0px !important;
+    }
+    
+    /* Thiết lập lại các cột theo hệ thống Grid */
     div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: calc(50% - 3px) !important;
-        max-width: calc(50% - 3px) !important;
-        min-width: calc(50% - 3px) !important;
-        flex: 0 0 calc(50% - 3px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         padding: 0px !important;
         margin: 0px !important;
     }
@@ -140,17 +143,9 @@ st.markdown(
             left: 8px !important;
         }
         
-        /* Bóp nhỏ khoảng cách giữa 2 ô xuống 4px */
+        /* Bóp nhỏ khoảng cách giữa các ô */
         div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] {
-            gap: 4px !important;
-        }
-        
-        /* Ép lại toán học chuẩn xác cho di động: 50% trừ đi một nửa của gap (4px / 2 = 2px) */
-        div[data-testid="stForm"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-            width: calc(50% - 2px) !important; 
-            max-width: calc(50% - 2px) !important; 
-            min-width: calc(50% - 2px) !important; 
-            flex: 0 0 calc(50% - 2px) !important; 
+            gap: 6px !important;
         }
         
         /* Thu nhỏ chữ tiêu đề nhãn để không tràn chữ */
