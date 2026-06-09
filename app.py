@@ -184,22 +184,28 @@ def tinh_khoang_cach_haversine(lat1, lon1, lat2, lon2):
 
 @st.cache_data(ttl=600) 
 def tai_co_so_du_lieu():
-    """Tải và đồng bộ dữ liệu từ Google Sheets Cloud"""
+    """Tải, đồng bộ dữ liệu từ Google Sheets Cloud và thiết lập chỉ mục tìm kiếm siêu tốc"""
     URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
     data = pd.read_csv(URL, dtype=str)
     data.columns = data.columns.str.strip()
+    
     for col in data.columns:
         data[col] = data[col].fillna("").astype(str).str.strip()
+        
     if 'MNC' in data.columns:
-        data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if x.isdigit() and len(x) == 1 else x)
+        data['MNC'] = data['MNC'].apply(lambda x: x.zfill(2) if (x.isdigit() and len(x) == 1) else x)
+        
+    # Tạo mã băm định danh gộp để tối ưu hóa truy vấn O(1) tăng tốc ứng dụng
+    data['LOOKUP_KEY'] = data[COT_MCC] + "_" + data[COT_MNC] + "_" + data[COT_LAC_TAC] + "_" + data[COT_CELL_ID]
     return data
 
 def truy_xuat_du_lieu_cot(row, danh_sach_ten_goi):
-    """Truy xuất động linh hoạt giá trị của cột theo tập tên đồng nghĩa"""
-    tap_ten_goi = set(x.lower() for x in danh_sach_ten_goi)
-    for k in row.index:
-        if str(k).lower() in tap_ten_goi:
-            return row[k]
+    """Truy xuất động linh hoạt giá trị của cột dựa trên tập tên đồng nghĩa"""
+    row_keys_lower = {str(k).lower(): k for k in row.index}
+    for ten in danh_sach_ten_goi:
+        ten_lower = ten.lower()
+        if ten_lower in row_keys_lower:
+            return row[row_keys_lower[ten_lower]]
     return "Không có dữ liệu"
 
 # ==============================================================================
@@ -302,7 +308,8 @@ else:
 
             if nut_tim_kiem:
                 if all([f1, f2, f3, f4]):
-                    ket_qua = df[(df[COT_MCC] == f1) & (df[COT_MNC] == f2) & (df[COT_LAC_TAC] == f3) & (df[COT_CELL_ID] == f4)]
+                    search_key = f"{f1}_{f2}_{f3}_{f4}"
+                    ket_qua = df[df['LOOKUP_KEY'] == search_key]
                     if not ket_qua.empty:
                         st.session_state.tram_hien_tai = ket_qua.iloc[0]
                         st.session_state.ds_gan_nhat = [] 
@@ -470,17 +477,22 @@ else:
                     danh_sach_lo_trinh = []
                     so_diem_khong_map_duoc = 0
                     
+                    # Xây dựng từ điển bảng băm (Dict Index) từ Cloud Data phục vụ tra cứu O(1) siêu tốc
+                    lookup_dict = df.set_index('LOOKUP_KEY').to_dict(orient='index')
+                    
                     for idx, row in df_route.iterrows():
                         cgi_raw = str(row[cot_cgi]).strip()
-                        if not cgi_raw or cgi_raw == 'nan': continue
+                        if not cgi_raw or cgi_raw == 'nan': 
+                            continue
                         
                         parts = re.split(r'[-_]', cgi_raw)
                         if len(parts) >= 4:
                             mcc_val, mnc_val, lac_val, cell_val = parts[-4], parts[-3].zfill(2), parts[-2], parts[-1]
-                            match = df[(df[COT_MCC] == mcc_val) & (df[COT_MNC] == mnc_val) & (df[COT_LAC_TAC] == lac_val) & (df[COT_CELL_ID] == cell_val)]
+                            key_find = f"{mcc_val}_{mnc_val}_{lac_val}_{cell_val}"
                             
-                            if not match.empty:
-                                tram_info = match.iloc[0].copy()
+                            # Tìm kiếm O(1) lập tức thay vì quét toàn bộ bộ nhớ DataFrame mặt nạ của phiên bản cũ
+                            if key_find in lookup_dict:
+                                tram_info = pd.Series(lookup_dict[key_find])
                                 if cot_time and pd.notna(row[cot_time]):
                                     tram_info['Thời gian đo_mapped'] = str(row[cot_time])
                                 danh_sach_lo_trinh.append(tram_info)
@@ -493,7 +505,8 @@ else:
                         st.session_state.ds_gan_nhat.clear()
                         
                         msg = f"🎉 Đã ánh xạ và vẽ lộ trình cho {len(danh_sach_lo_trinh)} điểm."
-                        if so_diem_khong_map_duoc > 0: msg += f" (Bỏ qua {so_diem_khong_map_duoc} điểm không trùng khớp Cloud)."
+                        if so_diem_khong_map_duoc > 0: 
+                            msg += f" (Bỏ qua {so_diem_khong_map_duoc} điểm không trùng khớp Cloud)."
                         st.success(msg)
                         st.rerun()
                     else:
